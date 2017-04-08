@@ -1,0 +1,26 @@
+<!doctype html>
+<html>
+  <head>
+    <title>DORA</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.3/dist/leaflet.css" />
+    <link rel="stylesheet" href="dora.css" />
+    <script src="https://unpkg.com/leaflet@1.0.3/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/vue"></script>
+  </head>
+  
+  <body>
+    <div id="panel">
+	    <h3><b><i>FAST-TRIPS</i> &raquo; DATA EXPLORER</b></h3>
+        <hr/><br/>
+	<label for="cql_filter">Person ID:</label>
+	<input v-model='person' size=30 @keyUp.enter="runFilter">
+
+	<button @click="runFilter">Fetch!</button>
+        <p style="font-size:smaller;"><i>Try: <u>mode='heavy_rail'</u> or <u>person_id='1775999_2'</u></i></p>
+    </div>
+     <div class="box">
+      <div id="sfmap" class="row content"></div>
+    </div>
+    <script src="dora.js"></script>
+  </body>
+</html>
