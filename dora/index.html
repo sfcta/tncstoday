@@ -7,18 +7,24 @@
     <script src="https://unpkg.com/leaflet@1.0.3/dist/leaflet.js"></script>
     <script src="https://unpkg.com/vue"></script>
   </head>
-  
+
   <body>
     <div id="panel">
-	    <h3><b><i>FAST-TRIPS</i> &raquo; DATA EXPLORER</b></h3>
+        <h3><b><i>FAST-TRIPS</i> &raquo; DATA EXPLORER</b></h3>
         <hr/><br/>
-	<label for="cql_filter">Person ID:</label>
-	<input v-model='person' size=30 @keyUp.enter="runFilter">
+        <label for="person">Person ID:</label>
+        <input v-model='person' size=15 @keyUp.enter="runFilter">
+        <button @click="runFilter">Fetch!</button>
 
-	<button @click="runFilter">Fetch!</button>
-        <p style="font-size:smaller;"><i>Try: <u>mode='heavy_rail'</u> or <u>person_id='1775999_2'</u></i></p>
+        <label for="trips">Trip ID:</label>
+        <select id="trips" v-model='selected_trips' multiple>
+            <option v-for="trip in trips" :value="trip.trip_id">
+                &nbsp;{{trip.trip_id}}&nbsp;
+            </option>
+        </select>
+        <p>selected: {{selected_trips}}</p>
     </div>
-     <div class="box">
+    <div class="box">
       <div id="sfmap" class="row content"></div>
     </div>
     <script src="dora.js"></script>
