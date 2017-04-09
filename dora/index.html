@@ -21,16 +21,24 @@
         <button @click="runFilter">Fetch!</button>
 
         <label for="trips">Trip ID:</label>
-        <select id="trips" v-model='selected_trips' multiple>
+        <select multiple id="trips" v-model='selectedTrips' :size='8'>
             <option v-for="trip in trips" :value="trip.trip_id">
                 &nbsp;{{trip.trip_id}}&nbsp;
             </option>
         </select>
-        <p>selected: {{selected_trips}}</p>
+
+        <label for="paths">Path Number</label>
+        <select multiple id="paths" v-model='selectedPaths' :size='8'>
+            <option v-for="path in paths" :value="path.pathnum">
+                &nbsp;{{path.pathnum}}&nbsp;
+            </option>
+        </select>
     </div>
+
     <div class="box">
       <div id="sfmap" class="row content"></div>
     </div>
+
     <script src="dora.js"></script>
   </body>
 </html>

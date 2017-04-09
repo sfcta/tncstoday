@@ -12,6 +12,7 @@ L.tileLayer(url, {
   accessToken:token,
 }).addTo(mymap);
 
+var personJson;
 var segmentLayer;
 
 var options = {
@@ -39,23 +40,67 @@ function addSegmentLayer(segments) {
     }
   });
   segmentLayer.addTo(mymap);
-  updateTripList(segments);
+}
+
+function highlightTrip() {
+  app.selectedPaths = [];
+  let clone = JSON.parse(JSON.stringify(personJson));
+  let allTrips = clone.features;
+  let thisTrip = [];
+  for (var trip of allTrips) {
+      if (''+trip.properties.person_trip_id === ''+app.selectedTrips) thisTrip.push(trip);
+  }
+  clone.features = thisTrip;
+
+  if (segmentLayer) segmentLayer.remove()
+  addSegmentLayer(clone);
+
+  updatePathList(clone);
+}
+
+function highlightPath() {
+  if (app.selectedPaths.length==0) return;
+
+  let clone = JSON.parse(JSON.stringify(personJson));
+  let allTrips = clone.features;
+  let thisPath = [];
+  for (var trip of allTrips) {
+      if (''+trip.properties.person_trip_id === ''+app.selectedTrips &&
+          ''+trip.properties.pathnum === ''+app.selectedPaths) {
+            thisPath.push(trip);
+      }
+  }
+  clone.features = thisPath;
+
+  if (segmentLayer) segmentLayer.remove()
+  addSegmentLayer(clone);
 }
 
 function updateTripList(segments) {
-    console.log(segments);
     let tripset = {};
     for (var feature of segments.features) {
         let tripId = feature.properties.person_trip_id;
-        console.log(tripId);
         tripset[feature.properties.person_trip_id]=null;
     }
     let tripArray = Object.keys(tripset);
     tripArray.sort(function(a, b) {return a-b});
-    console.log(tripArray);
     app.trips = []
     for (var t of tripArray) {
         app.trips.push({trip_id:t});
+    }
+}
+
+function updatePathList(segments) {
+    let pathset = {};
+    for (var feature of segments.features) {
+        let path = feature.properties.pathnum;
+        pathset[feature.properties.pathnum]=null;
+    }
+    let pathArray = Object.keys(pathset);
+    pathArray.sort(function(a, b) {return a-b});
+    app.paths.value='';
+    for (var p of pathArray) {
+        app.paths.push({pathnum:p});
     }
 }
 
@@ -71,7 +116,9 @@ function queryServer() {
   fetch(geoserverUrl + queryparams, options)
     .then((resp) => resp.json())
     .then(function(jsonData) {
+      personJson = jsonData;
       addSegmentLayer(jsonData);
+      updateTripList(jsonData);
     }).catch(function(error) {
       console.log("err: "+error);
     });
@@ -83,19 +130,25 @@ function runFilter() {
   if (this.person) options['cql_filter'] = `person_id='${this.person}'`
   else return;
 
-  this.queryServer();
+  queryServer();
 }
 
 var app = new Vue({
   el: '#panel',
   data: {
 	person: '',
-    selected_trips: [],
     trips: [],
+    paths: [],
+    selectedTrips: [],
+    selectedPaths: [],
   },
   methods: {
     queryServer: queryServer,
     runFilter: runFilter,
+  },
+  watch: {
+    selectedTrips: highlightTrip,
+    selectedPaths: highlightPath,
   },
 });
 
