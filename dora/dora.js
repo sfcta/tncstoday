@@ -47,7 +47,9 @@ function highlightTrip() {
   let clone = JSON.parse(JSON.stringify(personJson));
   let allTrips = clone.features;
   let thisTrip = [];
-  for (let trip of allTrips) {
+
+  for (let i=0; i<allTrips.length;i++) {
+    let trip = allTrips[i];
     if (''+trip.properties.person_trip_id === ''+app.selectedTrips) thisTrip.push(trip);
   }
   clone.features = thisTrip;
@@ -64,7 +66,8 @@ function highlightPath() {
   let clone = JSON.parse(JSON.stringify(personJson));
   let allTrips = clone.features;
   let thisPath = [];
-  for (let trip of allTrips) {
+  for (let i=0; i<allTrips.length;i++) {
+    let trip = allTrips[i];
     if (''+trip.properties.person_trip_id === ''+app.selectedTrips &&
         ''+trip.properties.pathnum === ''+app.selectedPaths) {
       thisPath.push(trip);
@@ -78,77 +81,118 @@ function highlightPath() {
 
 function updateTripList(segments) {
     let tripset = {};
-    for (var feature of segments.features) {
-        let tripId = feature.properties.person_trip_id;
-        tripset[feature.properties.person_trip_id]=null;
+    let features = segments.features;
+    for (let i=0; i<features.length;i++) {
+        let tripId = features[i].properties.person_trip_id;
+        tripset[features[i].properties.person_trip_id] = null;
     }
     let tripArray = Object.keys(tripset);
     tripArray.sort(function(a, b) {return a-b});
     app.trips = []
-    for (var t of tripArray) {
-        app.trips.push({trip_id:t});
+    for (let t=0; t<tripArray.length;t++) {
+        app.trips.push({trip_id:tripArray[t]});
     }
 }
 
 function updatePathList(segments) {
     let pathset = {};
-    for (var feature of segments.features) {
-        let path = feature.properties.pathnum;
-        pathset[feature.properties.pathnum]=null;
+    let features = segments.features;
+    for (let i=0; i<features.length;i++) {
+        let path = features[i].properties.pathnum;
+        pathset[features[i].properties.pathnum] = null;
     }
     let pathArray = Object.keys(pathset);
     pathArray.sort(function(a, b) {return a-b});
+    app.paths=[];
     app.paths.value='';
-    for (var p of pathArray) {
-        app.paths.push({pathnum:p});
+    for (let i=0; i<pathArray.length;i++) {
+        app.paths.push({pathnum:pathArray[i]});
     }
 }
 
 function queryServer() {
   const geoserverUrl = 'http://dwdev:8080/geoserver/ows?';
 
+  // convert option list into a url parameter string
   var esc = encodeURIComponent;
-  var queryparams = Object.keys(options)
-            .map(k => esc(k) + '=' + esc(options[k]))
-            .join('&');
+  var params = [];
+  for (let key in options) params.push(esc(key) + '=' + esc(options[key]));
+  var queryparams = params.join('&');
 
   // Fetch the segments
   fetch(geoserverUrl + queryparams, options)
-    .then((resp) => resp.json())
+    .then(function(resp) {
+      return resp.json();
+    })
     .then(function(jsonData) {
       personJson = jsonData;
       addSegmentLayer(jsonData);
       updateTripList(jsonData);
-    }).catch(function(error) {
+    })
+    .catch(function(error) {
       console.log("err: "+error);
     });
 }
 
 function runFilter() {
-  if (segmentLayer) segmentLayer.remove()
+  if (segmentLayer) segmentLayer.remove();
 
-  if (this.person) options['cql_filter'] = `person_id='${this.person}'`
+  if (app.person) options['cql_filter'] = "person_id='"+ app.person + "'";
   else return;
 
   queryServer();
 }
 
-var app = new Vue({
-  el: '#panel',
-  data: {
-	person: '',
-    trips: [],
-    paths: [],
-    selectedTrips: [],
-    selectedPaths: [],
-  },
-  methods: {
-    queryServer: queryServer,
-    runFilter: runFilter,
-  },
-  watch: {
-    selectedTrips: highlightTrip,
-    selectedPaths: highlightPath,
-  },
-});
+function loadScript(src, done) {
+  var js = document.createElement('script');
+  js.src = src;
+  js.onload = function() {
+    done();
+  };
+  js.onerror = function() {
+    done(new Error('Failed to load script ' + src));
+  };
+  document.head.appendChild(js);
+}
 
+var app;
+
+function main(err) {
+  app = new Vue({
+    el: '#panel',
+    data: {
+    person: '',
+      trips: [],
+      paths: [],
+      selectedTrips: [],
+      selectedPaths: [],
+    },
+    methods: {
+      queryServer: queryServer,
+      runFilter: runFilter,
+    },
+    watch: {
+      selectedTrips: highlightTrip,
+      selectedPaths: highlightPath,
+    },
+  });
+}
+
+function browserSupportsAllFeatures() {
+  return window.Promise &&
+         window.fetch &&
+         window.Symbol;
+}
+
+// ## START SCRIPT!!
+if (browserSupportsAllFeatures()) {
+  // Browsers that support all features run `main()` immediately.
+  console.log('Riding high!');
+  main();
+} else {
+  console.log('Quirks mode.');
+  // All other browsers loads polyfills and then run `main()`.
+  let polyfill = 'https://cdn.polyfill.io/v2/polyfill.min.js?'+
+                 'features=default,fetch';
+  loadScript(polyfill, main);
+}
