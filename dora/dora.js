@@ -21,7 +21,7 @@ var options = {
   version:'1.1.0',
   request:'GetFeature',
   outputFormat: 'json',
-}
+};
 
 function addSegmentLayer(segments) {
   segmentLayer = L.geoJSON(segments, {
@@ -47,12 +47,12 @@ function highlightTrip() {
   let clone = JSON.parse(JSON.stringify(personJson));
   let allTrips = clone.features;
   let thisTrip = [];
-  for (var trip of allTrips) {
-      if (''+trip.properties.person_trip_id === ''+app.selectedTrips) thisTrip.push(trip);
+  for (let trip of allTrips) {
+    if (''+trip.properties.person_trip_id === ''+app.selectedTrips) thisTrip.push(trip);
   }
   clone.features = thisTrip;
 
-  if (segmentLayer) segmentLayer.remove()
+  if (segmentLayer) segmentLayer.remove();
   addSegmentLayer(clone);
 
   updatePathList(clone);
@@ -64,11 +64,11 @@ function highlightPath() {
   let clone = JSON.parse(JSON.stringify(personJson));
   let allTrips = clone.features;
   let thisPath = [];
-  for (var trip of allTrips) {
-      if (''+trip.properties.person_trip_id === ''+app.selectedTrips &&
-          ''+trip.properties.pathnum === ''+app.selectedPaths) {
-            thisPath.push(trip);
-      }
+  for (let trip of allTrips) {
+    if (''+trip.properties.person_trip_id === ''+app.selectedTrips &&
+        ''+trip.properties.pathnum === ''+app.selectedPaths) {
+      thisPath.push(trip);
+    }
   }
   clone.features = thisPath;
 
