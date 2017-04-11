@@ -41,7 +41,7 @@ function addSegmentLayer(segments) {
         case 'transfer': return {color: "#446600", "z-index":"-1"};
         default: return {color: "#446600", "z-index":"-1"};
       }
-    }
+    },
   });
   segmentLayer.addTo(mymap);
 }
@@ -59,9 +59,45 @@ function highlightTrip() {
   }
   clone.features = thisTrip;
 
+  // Sort by linknum so origin and dest are correct -- DB doesn't guarantee feature order
+  clone.features.sort(function(a,b) {return a.properties.linknum - b.properties.linknum});
+
   if (segmentLayer) segmentLayer.remove();
   addSegmentLayer(clone);
   updatePathList(clone);
+
+  // first point in first polyline is always origin
+  originMarker = addODMarker(thisTrip[0].geometry.coordinates[0], true);
+
+  // determine destination -- last point of last polyline
+  let finalSegment = thisTrip[thisTrip.length - 1].geometry;
+  let dest = finalSegment.coordinates[finalSegment.coordinates.length - 1];
+  destMarker = addODMarker(dest, false);
+}
+
+let destMarker, originMarker;
+
+function addODMarker(lnglat, isOrigin) {
+  var marker = isOrigin ? originMarker : destMarker;
+  if (marker) marker.remove();
+
+  var iconOrig = L.AwesomeMarkers.icon({
+    prefix: 'ion',
+    icon: 'star',
+    markerColor:'green',
+  });
+
+  var iconDest = L.AwesomeMarkers.icon({
+    prefix: 'ion',
+    icon: 'flag',
+    markerColor:'red',
+  });
+
+  marker = new L.marker([lnglat[1], lnglat[0]], {
+    icon: isOrigin ? iconOrig : iconDest
+  }).addTo(mymap);
+
+  return marker;
 }
 
 function highlightPath() {
@@ -113,6 +149,9 @@ function updatePathList(segments) {
 
 function queryServer() {
   const geoserverUrl = 'http://dwdev:8080/geoserver/ows?';
+
+  if (originMarker) originMarker.remove();
+  if (destMarker) destMarker.remove();
 
   // convert option list into a url parameter string
   var esc = encodeURIComponent;

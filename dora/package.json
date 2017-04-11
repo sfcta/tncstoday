@@ -17,6 +17,7 @@
   "dependencies": {
     "babel-polyfill": "^6.23.0",
     "es6-promise": "^4.1.0",
-    "isomorphic-fetch": "^2.2.1"
+    "isomorphic-fetch": "^2.2.1",
+    "semantic-ui": "^2.2.10"
   }
 }

@@ -3,15 +3,30 @@
   <head>
     <title>DORA</title>
 
-    <link rel="stylesheet" href="dora.css" />
-
+    <!-- FAVICONS -->
     <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
     <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
     <meta name="theme-color" content="#ffffff">
 
+    <!-- LEAFLET -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.3/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.0.3/dist/leaflet.js"></script>
     <script src="https://unpkg.com/vue"></script>
+
+    <!-- SEMANTIC UI -->
+    <link rel="stylesheet" type="text/css" href="semantic/semantic.min.css">
+    <script
+      src="https://code.jquery.com/jquery-3.1.1.min.js"
+      integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
+      crossorigin="anonymous"></script>
+    <script src="semantic/semantic.min.js"></script>
+
+    <!-- IONICONS -->
+    <link rel="stylesheet" href="css/ionicons.min.css">
+    <link rel="stylesheet" href="css/leaflet.awesome-markers.css">
+    <script src="src/leaflet.awesome-markers.min.js"></script>
+
+    <link rel="stylesheet" href="css/dora.css" />
   </head>
 
   <body>
@@ -19,22 +34,28 @@
         <h3><b>FAST-TRIPS &raquo; EXPLORER</b></h3>
         <hr/><br/>
         <label for="person">Person ID:</label>
-        <input v-model='person' size=15 @keyUp.enter="runFilter">
-        <button @click="runFilter">Fetch!</button>
+        <div class="ui input">
+          <input v-model='person' size=20 @keyUp.enter="runFilter">
+        </div>
+        <button @click="runFilter" class="ui button">Fetch!</button>
 
         <label for="trips">Trip ID:</label>
-        <select multiple id="trips" v-model='selectedTrips' :size='8'>
+        <div class="ui input">
+        <select multiple class="ui select" id="trips" v-model='selectedTrips' :size='8'>
             <option v-for="trip in trips" :value="trip.trip_id">
                 &nbsp;{{trip.trip_id}}&nbsp;
             </option>
         </select>
+        </div>
 
         <label for="paths">Path</label>
+        <div class="ui input">
         <select multiple id="paths" v-model='selectedPaths' :size='8'>
             <option v-for="path in paths" :value="path.pathnum">
                 &nbsp;{{path.pathnum}}&nbsp;
             </option>
         </select>
+        </div>
     </div>
 
     <div class="box">
@@ -42,5 +63,6 @@
     </div>
 
     <script type="application/javascript" src="lib/dora.bundle.js"></script>
+    <!--<script type="application/javascript" src="src/dora.js"></script>-->
   </body>
 </html>
