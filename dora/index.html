@@ -30,36 +30,39 @@
   </head>
 
   <body>
-    <div id="panel">
-        <h3><b>FAST-TRIPS &raquo; EXPLORER</b></h3>
-        <hr/><br/>
-        <label for="person">Person ID:</label>
-        <div class="ui input">
-          <input v-model='person' size=20 @keyUp.enter="runFilter">
-        </div>
-        <button @click="runFilter" class="ui button">Fetch!</button>
+    <div id="container">
 
-        <label for="trips">Trip ID:</label>
-        <div class="ui input">
-        <select multiple class="ui select" id="trips" v-model='selectedTrips' :size='8'>
-            <option v-for="trip in trips" :value="trip.trip_id">
-                &nbsp;{{trip.trip_id}}&nbsp;
-            </option>
-        </select>
-        </div>
+      <div id="panel">
+          <h3><b>FAST-TRIPS &raquo; EXPLORER</b></h3>
+          <hr/><br/>
+          <label for="person">Person ID:</label>
+          <div class="ui input">
+            <input v-model='person' size=20 @keyUp.enter="runFilter">
+          </div>
+          <button @click="runFilter" class="ui button">Fetch!</button>
 
-        <label for="paths">Path</label>
-        <div class="ui input">
-        <select multiple id="paths" v-model='selectedPaths' :size='8'>
-            <option v-for="path in paths" :value="path.pathnum">
-                &nbsp;{{path.pathnum}}&nbsp;
-            </option>
-        </select>
-        </div>
-    </div>
+          <label for="trips">Trip ID:</label>
+          <div class="ui input">
+          <select multiple class="ui select" id="trips" v-model='selectedTrips' :size='8'>
+              <option v-for="trip in trips" :value="trip.trip_id">
+                  &nbsp;{{trip.trip_id}}&nbsp;
+              </option>
+          </select>
+          </div>
 
-    <div class="box">
-      <div id="sfmap" class="row content"></div>
+          <label for="paths">Path</label>
+          <div class="ui input">
+          <select multiple id="paths" v-model='selectedPaths' :size='8'>
+              <option v-for="path in paths" :value="path.pathnum">
+                  &nbsp;{{path.pathnum}}&nbsp;
+              </option>
+          </select>
+          </div>
+      </div>
+
+      <div id="sfmap">
+      </div>
+
     </div>
 
     <script type="application/javascript" src="lib/dora.bundle.js"></script>

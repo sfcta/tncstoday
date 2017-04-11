@@ -8,8 +8,9 @@ import 'isomorphic-fetch';
 var mymap = L.map('sfmap').setView([37.75, -122.3], 11);
 var url = 'https://api.mapbox.com/styles/v1/mapbox/dark-v9/tiles/256/{z}/{x}/{y}?access_token={accessToken}';
 var token = 'pk.eyJ1IjoicHNyYyIsImEiOiJjaXFmc2UxanMwM3F6ZnJtMWp3MjBvZHNrIn0._Dmske9er0ounTbBmdRrRQ';
-var attribution ='<a href="http://openstreetmap.org">OpenStreetMap</a> | '+
-                 '<a href="http://mapbox.com">Mapbox</a>';
+var attribution ='<a href="http://openstreetmap.org">OpenStreetMap</a> | ' +
+                 '<a href="http://mapbox.com">Mapbox</a> | ' +
+                 '<a href="http://www.sfcta.org">SFCTA</a>';
 L.tileLayer(url, {
   attribution:attribution,
   maxZoom: 18,
