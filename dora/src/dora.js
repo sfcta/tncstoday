@@ -21,14 +21,14 @@ var personJson;
 var segmentLayer;
 
 var options = {
-  typeName: 'mappoints:segments0',
+  typeName: 'mappoints:segments',
   service:'WFS',
   version:'1.1.0',
   request:'GetFeature',
   outputFormat: 'json',
 };
 
-function addSegmentLayer(segments) {
+function addSegmentLayer(segments, options={}) {
   segmentLayer = L.geoJSON(segments, {
     style: function(feature) {
       switch (feature.properties.mode) {
@@ -43,6 +43,13 @@ function addSegmentLayer(segments) {
         default: return {color: "#446600", "z-index":"-1"};
       }
     },
+    onEachFeature: function(feature, layer) {
+      var p = feature.properties;
+      var details = `<b>${p.mode}</b>`+
+                    `<hr/>`+
+                    `${p.route_id || ''}<br/>`;
+      layer.bindPopup(details);
+    },
   });
   segmentLayer.addTo(mymap);
 }
@@ -51,21 +58,17 @@ function highlightTrip() {
   if (app.selectedTrips.length==0) return;
 
   app.selectedPaths = [];
-  let clone = JSON.parse(JSON.stringify(personJson));
-  let allTrips = clone.features;
-  let thisTrip = [];
 
-  for (let trip of allTrips) {
-    if (''+trip.properties.person_trip_id === ''+app.selectedTrips) thisTrip.push(trip);
-  }
-  clone.features = thisTrip;
+  let thisTrip = personJson.features.filter(function(trip) {
+    return trip.properties.person_trip_id == app.selectedTrips;
+  });
 
   // Sort by linknum so origin and dest are correct -- DB doesn't guarantee feature order
-  clone.features.sort(function(a,b) {return a.properties.linknum - b.properties.linknum});
+  thisTrip.sort(function(a,b) {return a.properties.linknum - b.properties.linknum});
 
   if (segmentLayer) segmentLayer.remove();
-  addSegmentLayer(clone);
-  updatePathList(clone);
+  addSegmentLayer(thisTrip);
+  updatePathList(thisTrip);
 
   // first point in first polyline is always origin
   originMarker = addODMarker(thisTrip[0].geometry.coordinates[0], true);
@@ -104,19 +107,27 @@ function addODMarker(lnglat, isOrigin) {
 function highlightPath() {
   if (app.selectedPaths.length==0) return;
 
-  let clone = JSON.parse(JSON.stringify(personJson));
-  let allTrips = clone.features;
-  let thisPath = [];
-  for (let trip of allTrips) {
-    if (''+trip.properties.person_trip_id === ''+app.selectedTrips &&
-        ''+trip.properties.pathnum === ''+app.selectedPaths) {
-      thisPath.push(trip);
-    }
-  }
-  clone.features = thisPath;
+  let thisPath = personJson.features.filter(function(trip) {
+    return trip.properties.person_trip_id == app.selectedTrips &&
+           trip.properties.pathnum == app.selectedPaths;
+  });
 
   if (segmentLayer) segmentLayer.remove()
-  addSegmentLayer(clone);
+  addSegmentLayer(thisPath, {popup: true});
+
+  app.pathitems = [];
+  for (let segment of thisPath) {
+    let mode = segment.properties.mode;
+    let icon = mode == 'local_bus' ? 'ion-bus' :
+               mode == 'light_rail' ? 'ion-rail' :
+                       'ion-walk';
+
+    app.pathitems.push({
+      mode: segment.properties.mode,
+      route: segment.properties.route_id,
+      icon: icon,
+    });
+  }
 }
 
 function updateTripList(segments) {
@@ -128,6 +139,8 @@ function updateTripList(segments) {
     let tripArray = Object.keys(tripset);
     tripArray.sort(function(a, b) {return a-b});
     app.trips = []
+    app.pathitems = [];
+
     for (let t of tripArray) {
         app.trips.push({trip_id:t});
     }
@@ -135,12 +148,13 @@ function updateTripList(segments) {
 
 function updatePathList(segments) {
     let pathset = {};
-    for (let feature of segments.features) {
+    for (let feature of segments) {
         let path = feature.properties.pathnum;
         pathset[feature.properties.pathnum] = null;
     }
     let pathArray = Object.keys(pathset);
     pathArray.sort(function(a, b) {return a-b});
+    app.pathitems = [];
     app.paths=[];
     app.paths.value='';
     for (let p of pathArray) {
@@ -158,10 +172,11 @@ function queryServer() {
   var esc = encodeURIComponent;
   var params = [];
   for (let key in options) params.push(esc(key) + '=' + esc(options[key]));
-  var queryparams = params.join('&');
+
+  let finalUrl = geoserverUrl + params.join('&');
 
   // Fetch the segments
-  fetch(geoserverUrl + queryparams, options)
+  fetch(finalUrl)
     .then((resp) => resp.json())
     .then(function(jsonData) {
       personJson = jsonData;
@@ -186,11 +201,12 @@ function runFilter() {
 let app = new Vue({
   el: '#panel',
   data: {
-  person: '',
+    person: '',
     trips: [],
     paths: [],
     selectedTrips: [],
     selectedPaths: [],
+    pathitems: [],
   },
   methods: {
     queryServer: queryServer,

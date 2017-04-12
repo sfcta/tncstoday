@@ -4,7 +4,7 @@ html,body, { width=100%; height:100%; margin:0;
   font-family: Noto,Arial;
 }
 
-#container { position: relative; width:100%; height:100%}
+#container { position: relative; width:100%; height:100%; background-color:#888;}
 
 #panel {
   position:absolute;
@@ -18,11 +18,19 @@ html,body, { width=100%; height:100%; margin:0;
   float: right;
 }
 
+h3 {color: white; padding-top:5px;}
+
 #sfmap {
-  margin-right: 300px;
+  margin-right: 303px;
   height:100%;
 }
 
 #panel label {
-    display: block; padding-top:10px;
+    display: block; padding-top:10px; color:white;
 }
+
+#picker { width:100%;}
+
+.column1 {width:50%; float: left; margin-bottom:20px;}
+.column2 {width:50%; float: right; margin-bottom:20px; z-index:20;}
+
