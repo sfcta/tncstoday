@@ -40,10 +40,6 @@ wget http://sourceforge.net/projects/geoserver/files/GeoServer/$INSTALL_GEOSERVE
 unzip geoserver-$INSTALL_GEOSERVER_VERSION-war.zip geoserver.war
 mv geoserver.war /var/lib/tomcat7/webapps
 
-# Start GeoServer
-systemctl enable tomcat7.service
-systemctl start  tomcat7.service
-
 # Install PostgREST
 wget https://github.com/begriffs/postgrest/releases/download/v${INSTALL_POSTGREST_VERSION}/postgrest-${INSTALL_POSTGREST_VERSION}-ubuntu.tar.xz
 tar xf postgrest-${INSTALL_POSTGREST_VERSION}-ubuntu.tar.xz
@@ -52,15 +48,19 @@ mkdir -p /etc/postgREST/
 cp postgrest-files/postgrest.sh /usr/local/bin
 cp postgrest-files/postgrest.service /etc/systemd/system
 cp postgrest-files/postgrest-api.conf /etc/postgREST
-systemctl enable postgrest
-systemctl start  postgrest
 
 # Set up NGINX reverse proxy
 rm /etc/nginx/sites-enabled/default
-cp postgrest-files/postgrest-nginx.conf /etc/nginx/sites-available
-ln -s /etc/nginx/sites-available/postgrest-nginx.conf /etc/nginx/sites-enabled
-cp geoserver-nginx.conf /etc/nginx/sites-available
-ln -s /etc/nginx/sites-available/geoserver-nginx.conf /etc/nginx/sites-enabled
+cp nginx.conf /etc/nginx/sites-available/data-warehouse.conf
+ln -s /etc/nginx/sites-available/data-warehouse.conf /etc/nginx/sites-enabled
+
+# Start everything up!
+systemctl enable tomcat7
+systemctl start  tomcat7
+
+systemctl enable postgrest
+systemctl start  postgrest
+
 systemctl enable nginx
 systemctl start  nginx
 
