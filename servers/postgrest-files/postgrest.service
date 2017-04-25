@@ -1,0 +1,10 @@
+[Unit]
+Description = PostgREST API Service
+After = network.target
+
+[Service]
+ExecStart = /usr/local/bin/postgrest.sh
+
+[Install]
+WantedBy = multi-user.target
+

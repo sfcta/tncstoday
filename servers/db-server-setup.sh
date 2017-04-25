@@ -9,6 +9,8 @@
 # - http://www.digital-geography.com/postgresql-postgis-brief-introduction/
 # - http://workshops.boundlessgeo.com/postgis-intro/tuning.html
 
+export SFCTA_NETWORK_MASK=172.30.0.0/16
+
 # Must set PASSWORD env var
 : ${PASSWORD:?"not set. Usage:  sudo PASSWORD=xxx ./`basename $0`"}
 
@@ -42,7 +44,7 @@ for each in 9.2 9.3 9.4 9.5; do
 	sed -i 's/^auto/disable/' /etc/postgresql/$each/main/start.conf
 done;
 # Add postgres network config and tuning settings
-echo "host all all 172.30.0.0/16 md5" >> /etc/postgresql/9.6/main/pg_hba.conf
+echo "host all all ${SFCTA_NETWORK_MASK} md5" >> /etc/postgresql/9.6/main/pg_hba.conf
 cat << EOF >> /etc/postgresql/9.6/main/postgresql.conf
 # -------------------------------------------
 # SFCTA Data Warehouse Configuration Settings
