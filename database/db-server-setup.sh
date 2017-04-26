@@ -75,10 +75,11 @@ sudo -E pgxn install safeupdate
 
 # Set up roles - postgREST depends on db roles for authorization
 sudo -u postgres psql -f roles.sql
+sudo -u postgres psql -d template1 -c "ALTER USER gatekeeper WITH PASSWORD 'gk-$PASSWORD';"
 
 # Add CKAN database and user: 'ckan'
 printf "\nCKAN DB USER PASSWORD:\n"
-sudo -u postgres psql createuser -S -D -R -P ckan
+sudo -u postgres createuser -S -D -R -P ckan
 sudo -u postgres createdb -O ckan ckan -E utf-8
 
 printf "\n\nDONE! You should definitely reboot now.\n"

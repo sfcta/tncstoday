@@ -6,6 +6,4 @@ CREATE ROLE staff LOGIN;
 CREATE ROLE anon;
 
 GRANT staff,anon TO gatekeeper;
-
-ALTER USER gatekeeper WITH PASSWORD $(PASSWORD);
  
