@@ -6,11 +6,10 @@
 # Reference material:
 # - http://docs.ckan.org/en/latest/maintaining/installing/install-from-package.html
 
-export CKAN_DB_URL=postgresql://ckan:27magicKittens@172.30.1.210/ckan
 export CKAN_PACKAGE=python-ckan_2.6-trusty_amd64.deb
 
-# Must set PASSWORD env var
-#: ${PASSWORD:?"not set. Usage:  sudo PASSWORD=xxx ./`basename $0`"}
+# Must set CKAN_DB_URL env var
+#: ${CKAN_DB_URL:?"not set. Usage:  sudo CKAN_DB_URL=xxx ./`basename $0`"}
 
 # Must be run as root/sudo.
 if [ `whoami` != root ]; then
@@ -40,13 +39,10 @@ dpkg -i $CKAN_PACKAGE
 sed -i "/^sqlalchemy/c sqlalchemy.url = $CKAN_DB_URL" \
 	/etc/ckan/default/production.ini
 
-# Install Oracle Java 8 JRE
-add-apt-repository -y ppa:webupd8team/java
-apt-get update
-apt-get install oracle-java8-installer
- 
-# Install Solr-tomcat search
+# Solr-tomcat search
 apt-get install -y solr-tomcat
+mv /etc/solr/conf/schema.xml /etc/solr/conf/schema.xml.bak
+sudo ln -s /usr/lib/ckan/default/src/ckan/ckan/config/solr/schema.xml /etc/solr/conf/schema.xml
 
 # Set postgres user password - same PW in linux system and in postgres db
 #printf "\n---\nSETTING POSTGRES DB USER PASSWORD\n"
