@@ -52,7 +52,7 @@ echo "host all all ${SFCTA_NETWORK_MASK} md5" >> /etc/postgresql/9.6/main/pg_hba
 cat << EOF >> /etc/postgresql/9.6/main/postgresql.conf
 # -------------------------------------------
 # SFCTA Data Warehouse Configuration Settings
-listen_addresses = '127.0.0.1'
+listen_addresses = '*'
 port = 5432
 # PostGIS-optimized tuning parameters from http://workshops.boundlessgeo.com/postgis-intro/tuning.html 
 shared_buffers = 1024MB
@@ -63,7 +63,7 @@ max_wal_size = 256MB
 random_page_cost = 2.0
 
 # Don't allow UPDATE or DELETE to erase tables without specifying conditions
-shared_preload_libraries = 'safeupdate'
+# shared_preload_libraries = 'safeupdate'
 EOF
 
 # Harden Postgresql to prevent UPDATE and DELETES that hose entire table
@@ -71,6 +71,15 @@ EOF
 # -- and is really just 'make'
 ln -s /usr/bin/make /usr/bin/gmake
 sudo -E pgxn install safeupdate
+
+# Set up roles - postgREST depends on db roles for authorization
+sudo -u postgres psql -f roles.sql
+
+# Add CKAN database and user: 'ckan'
+printf "\nCKAN DB USER PASSWORD:\n"
+sudo -u postgres psql createuser -S -D -R -P ckan
+sudo -u postgres createdb -O ckan ckan -E utf-8
+
 
 printf "\n\nDONE! You should definitely reboot now.\n"
  
