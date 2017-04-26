@@ -54,6 +54,7 @@ cat << EOF >> /etc/postgresql/9.6/main/postgresql.conf
 # SFCTA Data Warehouse Configuration Settings
 listen_addresses = '*'
 port = 5432
+
 # PostGIS-optimized tuning parameters from http://workshops.boundlessgeo.com/postgis-intro/tuning.html 
 shared_buffers = 1024MB
 work_mem = 16MB
@@ -79,7 +80,6 @@ sudo -u postgres psql -f roles.sql
 printf "\nCKAN DB USER PASSWORD:\n"
 sudo -u postgres psql createuser -S -D -R -P ckan
 sudo -u postgres createdb -O ckan ckan -E utf-8
-
 
 printf "\n\nDONE! You should definitely reboot now.\n"
  
