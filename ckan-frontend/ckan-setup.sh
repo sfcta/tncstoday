@@ -60,5 +60,8 @@ paster sysadmin add administrator -c /etc/ckan/default/production.ini
 service apache2 restart
 service nginx restart
 
+printf "\nIf you are restoring from a backup, you probably want to read:\n"
+printf "http://docs.ckan.org/en/latest/maintaining/database-management.html#import-and-export\n"
+
 printf "\n\nDONE! You should definitely reboot now.\n"
- 
+
