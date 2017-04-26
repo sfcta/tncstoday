@@ -6,10 +6,11 @@
 # Reference material:
 # - http://docs.ckan.org/en/latest/maintaining/installing/install-from-package.html
 
+export SITE_URL=http://172.30.1.215
 export CKAN_PACKAGE=python-ckan_2.6-trusty_amd64.deb
 
 # Must set CKAN_DB_URL env var
-#: ${CKAN_DB_URL:?"not set. Usage:  sudo CKAN_DB_URL=xxx ./`basename $0`"}
+: ${CKAN_DB_URL:?"not set. Usage:  sudo CKAN_DB_URL=xxx ./`basename $0`"}
 
 # Must be run as root/sudo.
 if [ `whoami` != root ]; then
@@ -35,20 +36,21 @@ apt-get install -y \
 wget http://packaging.ckan.org/$CKAN_PACKAGE
 dpkg -i $CKAN_PACKAGE
 
-# Update CKAN DB settings
-sed -i "/^sqlalchemy/c sqlalchemy.url = $CKAN_DB_URL" \
-	/etc/ckan/default/production.ini
-
 # Solr-tomcat search
 apt-get install -y solr-tomcat
 mv /etc/solr/conf/schema.xml /etc/solr/conf/schema.xml.bak
 sudo ln -s /usr/lib/ckan/default/src/ckan/ckan/config/solr/schema.xml /etc/solr/conf/schema.xml
+sed -i "/Connector port=\"8080\"/c     <Connector port=\"8001\" protocol=\"HTTP/1.1\"" /etc/tomcat6/server.xml
+service tomcat6 restart
 
-# Set postgres user password - same PW in linux system and in postgres db
-#printf "\n---\nSETTING POSTGRES DB USER PASSWORD\n"
-#chpasswd <<< "postgres:$PASSWORD"
-#sudo -u postgres psql -d template1 -c "ALTER USER postgres WITH PASSWORD '$PASSWORD';"
+# Update CKAN settings
+sed -i "/^sqlalchemy/c sqlalchemy.url = $CKAN_DB_URL" /etc/ckan/default/production.ini
+sed -i "/^#solr_url/c solr_url=http://127.0.0.1:8001/solr" /etc/ckan/default/production.ini
+sed -i "/^ckan.site_url/c ckan.site_url = $SITE_URL" /etc/ckan/default/production.ini
+ckan db init
 
+service apache2 restart
+service nginx restart
 
 printf "\n\nDONE! You should definitely reboot now.\n"
  
