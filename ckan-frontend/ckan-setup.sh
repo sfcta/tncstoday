@@ -47,7 +47,15 @@ service tomcat6 restart
 sed -i "/^sqlalchemy/c sqlalchemy.url = $CKAN_DB_URL" /etc/ckan/default/production.ini
 sed -i "/^#solr_url/c solr_url=http://127.0.0.1:8001/solr" /etc/ckan/default/production.ini
 sed -i "/^ckan.site_url/c ckan.site_url = $SITE_URL" /etc/ckan/default/production.ini
+sed -i "/^ckan.site_title/c ckan.site_title = PROSPECTOR" /etc/ckan/default/production.ini
+sed -i "/^ckan.favicon/c ckan.favicon = http://www.sfcta.org/sites/all/themes/sfcta/favicon.ico" /etc/ckan/default/production.ini
+cp prospector-logo.png /usr/lib/ckan/default/src/ckan/ckan/public/base/images
 ckan db init
+
+# Add system administrator
+source /usr/lib/ckan/default/bin/activate
+cd /usr/lib/ckan/default/src/ckan
+paster sysadmin add administrator -c /etc/ckan/default/production.ini 
 
 service apache2 restart
 service nginx restart
