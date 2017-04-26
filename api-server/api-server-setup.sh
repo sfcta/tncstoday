@@ -41,13 +41,13 @@ unzip geoserver-$INSTALL_GEOSERVER_VERSION-war.zip geoserver.war
 mv geoserver.war /var/lib/tomcat7/webapps
 
 # Install PostgREST
+mkdir -p /etc/postgREST/
+cp postgrest.conf /etc/postgREST
+cp start-postgrest.sh /usr/local/bin
+cp postgrest.service /etc/systemd/system
 wget https://github.com/begriffs/postgrest/releases/download/v${INSTALL_POSTGREST_VERSION}/postgrest-${INSTALL_POSTGREST_VERSION}-ubuntu.tar.xz
 tar xf postgrest-${INSTALL_POSTGREST_VERSION}-ubuntu.tar.xz
 mv postgrest /usr/local/bin
-mkdir -p /etc/postgREST/
-cp postgrest-files/postgrest.sh /usr/local/bin
-cp postgrest-files/postgrest.service /etc/systemd/system
-cp postgrest-files/postgrest-api.conf /etc/postgREST
 
 # Set up NGINX reverse proxy
 rm /etc/nginx/sites-enabled/default

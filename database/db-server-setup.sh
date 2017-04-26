@@ -37,7 +37,6 @@ apt-get install -y \
 	postgresql-9.6 \
 	postgresql-server-dev-9.6\
 
-
 # Set postgres user password - same PW in linux system and in postgres db
 printf "\n---\nSETTING POSTGRES DB USER PASSWORD\n"
 chpasswd <<< "postgres:$PASSWORD"
@@ -47,12 +46,13 @@ sudo -u postgres psql -d template1 -c "ALTER USER postgres WITH PASSWORD '$PASSW
 for each in 9.2 9.3 9.4 9.5; do
 	sed -i 's/^auto/disable/' /etc/postgresql/$each/main/start.conf
 done;
+
 # Add postgres network config and tuning settings
 echo "host all all ${SFCTA_NETWORK_MASK} md5" >> /etc/postgresql/9.6/main/pg_hba.conf
 cat << EOF >> /etc/postgresql/9.6/main/postgresql.conf
 # -------------------------------------------
 # SFCTA Data Warehouse Configuration Settings
-listen_addresses = '*'
+listen_addresses = '127.0.0.1'
 port = 5432
 # PostGIS-optimized tuning parameters from http://workshops.boundlessgeo.com/postgis-intro/tuning.html 
 shared_buffers = 1024MB
@@ -61,19 +61,16 @@ maintenance_work_mem = 64MB
 wal_buffers = 1MB
 max_wal_size = 256MB
 random_page_cost = 2.0
+
 # Don't allow UPDATE or DELETE to erase tables without specifying conditions
 shared_preload_libraries = 'safeupdate'
 EOF
 
 # Harden Postgresql to prevent UPDATE and DELETES that hose entire table
+# I am baffled why pgxn uses 'gmake' which is in no package in Ubuntu
+# -- and is really just 'make'
 ln -s /usr/bin/make /usr/bin/gmake
 sudo -E pgxn install safeupdate
-
-# Now you are ready to create some geospatial databases! e.g.
-# DB_NAME=fasttrips
-# sudo -u postgres psql -c "CREATE DATABASE $DB_NAME;"
-# sudo -u postgres psql -d $DB_NAME -c "CREATE EXTENSION postgis;"
-# sudo -u postgres psql -d $DB_NAME -c "CREATE EXTENSION postgis_topology;"
 
 printf "\n\nDONE! You should definitely reboot now.\n"
  
