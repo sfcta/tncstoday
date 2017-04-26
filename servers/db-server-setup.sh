@@ -31,8 +31,12 @@ apt-get update && apt-get upgrade -y && apt-get install -y linux-generic
 
 # Install Postgresql and Postgis 
 apt-get install -y \
+	build-essential \
+	pgxnclient \
 	postgis-2.3 \
-	postgresql-9.6
+	postgresql-9.6 \
+	postgresql-server-dev-9.6\
+
 
 # Set postgres user password - same PW in linux system and in postgres db
 printf "\n---\nSETTING POSTGRES DB USER PASSWORD\n"
@@ -57,7 +61,13 @@ maintenance_work_mem = 64MB
 wal_buffers = 1MB
 max_wal_size = 256MB
 random_page_cost = 2.0
+# Don't allow UPDATE or DELETE to erase tables without specifying conditions
+shared_preload_libraries = 'safeupdate'
 EOF
+
+# Harden Postgresql to prevent UPDATE and DELETES that hose entire table
+ln -s /usr/bin/make /usr/bin/gmake
+sudo -E pgxn install safeupdate
 
 # Now you are ready to create some geospatial databases! e.g.
 # DB_NAME=fasttrips
