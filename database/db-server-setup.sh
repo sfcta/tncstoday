@@ -31,6 +31,7 @@ apt-get update && apt-get upgrade -y && apt-get install -y linux-generic
 
 # Install Postgresql and Postgis 
 apt-get install -y \
+	borgbackup \
 	build-essential \
 	pgxnclient \
 	postgis-2.3 \
