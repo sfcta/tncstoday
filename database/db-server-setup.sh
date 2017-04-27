@@ -34,9 +34,11 @@ apt-get install -y \
 	borgbackup \
 	build-essential \
 	pgxnclient \
+	postgis \
 	postgis-2.3 \
 	postgresql-9.6 \
-	postgresql-server-dev-9.6\
+	postgresql-server-dev-9.6 \
+	unzip \
 
 # Set postgres user password - same PW in linux system and in postgres db
 printf "\n---\nSETTING POSTGRES DB USER PASSWORD\n"
