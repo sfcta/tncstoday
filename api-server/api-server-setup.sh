@@ -25,6 +25,8 @@ apt update && apt-get upgrade -y && apt-get install -y linux-generic
 add-apt-repository -y ppa:webupd8team/java
 apt update
 apt install oracle-java8-installer
+rm /usr/lib/jvm/default-java
+ln -s /usr/lib/jvm/java-8-oracle /usr/lib/jvm/default-java
 
 # Install nginx tomcat and other required packages
 apt install -y \
@@ -39,6 +41,8 @@ apt install -y \
 wget http://sourceforge.net/projects/geoserver/files/GeoServer/$INSTALL_GEOSERVER_VERSION/geoserver-$INSTALL_GEOSERVER_VERSION-war.zip
 unzip geoserver-$INSTALL_GEOSERVER_VERSION-war.zip geoserver.war
 mv geoserver.war /var/lib/tomcat7/webapps
+echo "#!/bin/bash" > /usr/share/tomcat7/bin/setenv.sh
+echo "CATALINA_OPTS=\"-server -Xmx800m\"" >> /usr/share/tomcat7/bin/setenv.sh
 
 # Install PostgREST
 mkdir -p /etc/postgREST/
