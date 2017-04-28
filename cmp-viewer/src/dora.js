@@ -5,7 +5,7 @@
 import 'babel-polyfill';
 import 'isomorphic-fetch';
 
-var mymap = L.map('sfmap').setView([37.75, -122.3], 11);
+var mymap = L.map('sfmap').setView([37.77, -122.44], 13);
 var url = 'https://api.mapbox.com/styles/v1/mapbox/dark-v9/tiles/256/{z}/{x}/{y}?access_token={accessToken}';
 var token = 'pk.eyJ1IjoicHNyYyIsImEiOiJjaXFmc2UxanMwM3F6ZnJtMWp3MjBvZHNrIn0._Dmske9er0ounTbBmdRrRQ';
 var attribution ='<a href="http://openstreetmap.org">OpenStreetMap</a> | ' +
@@ -24,31 +24,66 @@ var options = {
   select: 'geometry,segnum2013,cmp_name,cmp_from,cmp_to,cmp_dir,cmp_len',
 };
 
+let styles = {normal  : {"color": "#ff7800", "weight":4,  "opacity": 0.8, },
+              selected: {"color": "#fec",    "weight":10, "opacity": 1.0, },
+};
+
 function addSegmentLayer(segments, options={}) {
-  var myStyle = {
-    "color": "#ff7800",
-    "weight": 3,
-    "opacity": 1.0,
-  };
-
-  console.log(segments);
-
+  // TODO: figure out why PostGIS geojson isn't in exactly the right format.
   for (let segment of segments) {
     segment["type"] = "Feature";
     segment["geometry"] = JSON.parse(segment.geometry);
+    console.log(segment);
   }
 
   segmentLayer = L.geoJSON(segments, {
-    style: myStyle,
+    style: styles.normal,
     onEachFeature: function(feature, layer) {
-//      var p = feature.properties;
-//      var details = `<b>${p.mode}</b>`+
-//                    `<hr/>`+
-//                    `${p.route_id || ''}<br/>`;
-      layer.bindPopup(feature.cmp_name);
+      layer.on({ mouseover: highlightSegment,
+                 click : clickedOnSegment,
+      });
     },
   });
   segmentLayer.addTo(mymap);
+}
+
+let selectedSegment;
+
+function highlightSegment(e) {
+      let segment = e.target.feature;
+      let cmp_id = segment.segnum2013;
+
+      if (selectedSegment) selectedSegment.setStyle(styles.normal);
+
+      selectedSegment = e.target;
+      selectedSegment.setStyle(styles.selected);
+      selectedSegment.bringToFront();
+}
+
+function clickedOnSegment(e) {
+      console.log(e);
+      let segment = e.target.feature;
+      let cmp_id = segment.segnum2013;
+
+      // fetch the CMP details
+      let finalUrl = 'http://172.30.1.208/api/auto_speeds?cmp_id=eq.' + cmp_id;
+      fetch(finalUrl).then((resp) => resp.json()).then(function(jsonData) {
+          let details = "";
+          for (let entry of jsonData) {
+            details = details + entry.year + ": " + entry.avg_speed + "<br/>";
+          }
+          let popupText = "<b>"+segment.cmp_name+" "+segment.cmp_dir+"-bound</b><br/>" +
+                          segment.cmp_from + " to " + segment.cmp_to +
+                          "<hr/>" + details;
+          console.log(popupText);
+
+          let popup = L.popup()
+            .setLatLng(e.latlng)
+            .setContent(popupText)
+            .openOn(mymap);
+      }).catch(function(error) {
+          console.log("err: "+error);
+      });
 }
 
 function highlightTrip() {
