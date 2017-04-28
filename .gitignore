@@ -1,2 +1,6 @@
 dora/lib/
 dora/node_modules/
+bower_components
+node_modules
+semantic/
+
