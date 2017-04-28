@@ -3370,8 +3370,10 @@ __webpack_require__(114);
 
 __webpack_require__(115);
 
+var theme = "dark";
+
 var mymap = L.map('sfmap').setView([37.77, -122.44], 13);
-var url = 'https://api.mapbox.com/styles/v1/mapbox/dark-v9/tiles/256/{z}/{x}/{y}?access_token={accessToken}';
+var url = 'https://api.mapbox.com/styles/v1/mapbox/' + theme + '-v9/tiles/256/{z}/{x}/{y}?access_token={accessToken}';
 var token = 'pk.eyJ1IjoicHNyYyIsImEiOiJjaXFmc2UxanMwM3F6ZnJtMWp3MjBvZHNrIn0._Dmske9er0ounTbBmdRrRQ';
 var attribution = '<a href="http://openstreetmap.org">OpenStreetMap</a> | ' + '<a href="http://mapbox.com">Mapbox</a> | ' + '<a href="http://www.sfcta.org">SFCTA</a>';
 L.tileLayer(url, {
@@ -3387,9 +3389,17 @@ var options = {
   select: 'geometry,segnum2013,cmp_name,cmp_from,cmp_to,cmp_dir,cmp_len'
 };
 
-var styles = { normal: { "color": "#ff7800", "weight": 4, "opacity": 0.8 },
-  selected: { "color": "#fec", "weight": 10, "opacity": 1.0 }
+var dark_styles = { normal: { "color": "#ff7800", "weight": 4, "opacity": 1.0 },
+  selected: { "color": "#fec", "weight": 10, "opacity": 1.0 },
+  popup: { "color": "#8f8", "weight": 10, "opacity": 1.0 }
 };
+
+var light_styles = { normal: { "color": "#66f", "weight": 4, "opacity": 1.0 },
+  selected: { "color": "#6f6", "weight": 10, "opacity": 1.0 },
+  popup: { "color": "#ee4", "weight": 10, "opacity": 1.0 }
+};
+
+var styles = theme === 'dark' ? dark_styles : light_styles;
 
 function addSegmentLayer(segments) {
   var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
@@ -3405,7 +3415,6 @@ function addSegmentLayer(segments) {
 
       segment["type"] = "Feature";
       segment["geometry"] = JSON.parse(segment.geometry);
-      console.log(segment);
     }
   } catch (err) {
     _didIteratorError = true;
@@ -3433,281 +3442,102 @@ function addSegmentLayer(segments) {
   segmentLayer.addTo(mymap);
 }
 
-var selectedSegment = void 0;
+var selectedSegment = void 0,
+    popupSegment = void 0;
 
 function highlightSegment(e) {
   var segment = e.target.feature;
   var cmp_id = segment.segnum2013;
 
-  if (selectedSegment) selectedSegment.setStyle(styles.normal);
+  if (selectedSegment != popupSegment) {
+    if (selectedSegment) selectedSegment.setStyle(styles.normal);
+  }
 
   selectedSegment = e.target;
   selectedSegment.setStyle(styles.selected);
   selectedSegment.bringToFront();
 }
 
+function buildChartHtmlFromCmpData(json) {
+  var byYear = {};
+  var data = [];
+
+  var _iteratorNormalCompletion2 = true;
+  var _didIteratorError2 = false;
+  var _iteratorError2 = undefined;
+
+  try {
+    for (var _iterator2 = json[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+      var entry = _step2.value;
+
+      var speed = Number(entry.avg_speed).toFixed(1);
+      if (!byYear[entry.year]) byYear[entry.year] = {};
+      byYear[entry.year][entry.period] = speed;
+    }
+  } catch (err) {
+    _didIteratorError2 = true;
+    _iteratorError2 = err;
+  } finally {
+    try {
+      if (!_iteratorNormalCompletion2 && _iterator2.return) {
+        _iterator2.return();
+      }
+    } finally {
+      if (_didIteratorError2) {
+        throw _iteratorError2;
+      }
+    }
+  }
+
+  for (var year in byYear) {
+    data.push({ year: year, am: byYear[year]['AM'], pm: byYear[year]['PM'] });
+  }
+
+  new Morris.Line({
+    // ID of the element in which to draw the chart.
+    element: 'chart',
+    // Chart data records -- each entry in this array corresponds to a point on
+    // the chart.
+    data: data,
+    // The name of the data record attribute that contains x-values.
+    xkey: 'year',
+    // A list of names of data record attributes that contain y-values.
+    ykeys: ['am', 'pm'],
+    // Labels for the ykeys -- will be displayed when you hover over the
+    // chart.
+    labels: ['AM', 'PM'],
+    lineColors: ["#f66", "#44f"],
+    xLabels: "year",
+    xLabelAngle: 45
+  });
+}
+
 function clickedOnSegment(e) {
-  console.log(e);
   var segment = e.target.feature;
   var cmp_id = segment.segnum2013;
+
+  // highlight it
+  if (popupSegment) popupSegment.setStyle(styles.normal);
+  e.target.setStyle(styles.popup);
+  popupSegment = e.target;
+
+  // delete old chart
+  var chart = document.getElementById("chart");
+  if (chart) chart.parentNode.removeChild(chart);
 
   // fetch the CMP details
   var finalUrl = 'http://172.30.1.208/api/auto_speeds?cmp_id=eq.' + cmp_id;
   fetch(finalUrl).then(function (resp) {
     return resp.json();
   }).then(function (jsonData) {
-    var details = "";
-    var _iteratorNormalCompletion2 = true;
-    var _didIteratorError2 = false;
-    var _iteratorError2 = undefined;
+    var popupText = "<b>" + segment.cmp_name + " " + segment.cmp_dir + "-bound</b><br/>" + segment.cmp_from + " to " + segment.cmp_to + "<hr/>" + "<div id=\"chart\" style=\"width: 300px; height:250px;\"></div>";
 
-    try {
-      for (var _iterator2 = jsonData[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-        var entry = _step2.value;
+    var popup = L.popup({ width: "600", maxwidth: "600" }).setLatLng(e.latlng).setContent(popupText).openOn(mymap);
 
-        details = details + entry.year + ": " + entry.avg_speed + "<br/>";
-      }
-    } catch (err) {
-      _didIteratorError2 = true;
-      _iteratorError2 = err;
-    } finally {
-      try {
-        if (!_iteratorNormalCompletion2 && _iterator2.return) {
-          _iterator2.return();
-        }
-      } finally {
-        if (_didIteratorError2) {
-          throw _iteratorError2;
-        }
-      }
-    }
-
-    var popupText = "<b>" + segment.cmp_name + " " + segment.cmp_dir + "-bound</b><br/>" + segment.cmp_from + " to " + segment.cmp_to + "<hr/>" + details;
-    console.log(popupText);
-
-    var popup = L.popup().setLatLng(e.latlng).setContent(popupText).openOn(mymap);
+    var chartHtml = buildChartHtmlFromCmpData(jsonData);
   }).catch(function (error) {
     console.log("err: " + error);
   });
-}
-
-function highlightTrip() {
-  if (app.selectedTrips.length == 0) return;
-
-  app.selectedPaths = [];
-
-  var thisTrip = personJson.features.filter(function (trip) {
-    return trip.properties.person_trip_id == app.selectedTrips;
-  });
-
-  // Sort by linknum so origin and dest are correct -- DB doesn't guarantee feature order
-  thisTrip.sort(function (a, b) {
-    return a.properties.linknum - b.properties.linknum;
-  });
-
-  if (segmentLayer) segmentLayer.remove();
-  addSegmentLayer(thisTrip);
-  updatePathList(thisTrip);
-
-  // first point in first polyline is always origin
-  originMarker = addODMarker(thisTrip[0].geometry.coordinates[0], true);
-
-  // determine destination -- last point of last polyline
-  var finalSegment = thisTrip[thisTrip.length - 1].geometry;
-  var dest = finalSegment.coordinates[finalSegment.coordinates.length - 1];
-  destMarker = addODMarker(dest, false);
-}
-
-var destMarker = void 0,
-    originMarker = void 0;
-
-function addODMarker(lnglat, isOrigin) {
-  var marker = isOrigin ? originMarker : destMarker;
-  if (marker) marker.remove();
-
-  var iconOrig = L.AwesomeMarkers.icon({
-    prefix: 'ion',
-    icon: 'star',
-    markerColor: 'green'
-  });
-
-  var iconDest = L.AwesomeMarkers.icon({
-    prefix: 'ion',
-    icon: 'flag',
-    markerColor: 'red'
-  });
-
-  marker = new L.marker([lnglat[1], lnglat[0]], {
-    icon: isOrigin ? iconOrig : iconDest
-  }).addTo(mymap);
-
-  return marker;
-}
-
-function highlightPath() {
-  if (app.selectedPaths.length == 0) return;
-
-  var thisPath = personJson.features.filter(function (trip) {
-    return trip.properties.person_trip_id == app.selectedTrips && trip.properties.pathnum == app.selectedPaths;
-  });
-
-  if (segmentLayer) segmentLayer.remove();
-  addSegmentLayer(thisPath, { popup: true });
-
-  app.pathitems = [];
-  var _iteratorNormalCompletion3 = true;
-  var _didIteratorError3 = false;
-  var _iteratorError3 = undefined;
-
-  try {
-    for (var _iterator3 = thisPath[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-      var segment = _step3.value;
-
-      var mode = segment.properties.mode;
-      var icon = mode == 'local_bus' ? 'ion-bus' : mode == 'light_rail' ? 'ion-rail' : 'ion-walk';
-
-      app.pathitems.push({
-        mode: segment.properties.mode,
-        route: segment.properties.route_id,
-        icon: icon
-      });
-    }
-  } catch (err) {
-    _didIteratorError3 = true;
-    _iteratorError3 = err;
-  } finally {
-    try {
-      if (!_iteratorNormalCompletion3 && _iterator3.return) {
-        _iterator3.return();
-      }
-    } finally {
-      if (_didIteratorError3) {
-        throw _iteratorError3;
-      }
-    }
-  }
-}
-
-function updateTripList(segments) {
-  var tripset = {};
-  var _iteratorNormalCompletion4 = true;
-  var _didIteratorError4 = false;
-  var _iteratorError4 = undefined;
-
-  try {
-    for (var _iterator4 = segments.features[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-      var feature = _step4.value;
-
-      var tripId = feature.properties.person_trip_id;
-      tripset[feature.properties.person_trip_id] = null;
-    }
-  } catch (err) {
-    _didIteratorError4 = true;
-    _iteratorError4 = err;
-  } finally {
-    try {
-      if (!_iteratorNormalCompletion4 && _iterator4.return) {
-        _iterator4.return();
-      }
-    } finally {
-      if (_didIteratorError4) {
-        throw _iteratorError4;
-      }
-    }
-  }
-
-  var tripArray = Object.keys(tripset);
-  tripArray.sort(function (a, b) {
-    return a - b;
-  });
-  app.trips = [];
-  app.pathitems = [];
-
-  var _iteratorNormalCompletion5 = true;
-  var _didIteratorError5 = false;
-  var _iteratorError5 = undefined;
-
-  try {
-    for (var _iterator5 = tripArray[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
-      var t = _step5.value;
-
-      app.trips.push({ trip_id: t });
-    }
-  } catch (err) {
-    _didIteratorError5 = true;
-    _iteratorError5 = err;
-  } finally {
-    try {
-      if (!_iteratorNormalCompletion5 && _iterator5.return) {
-        _iterator5.return();
-      }
-    } finally {
-      if (_didIteratorError5) {
-        throw _iteratorError5;
-      }
-    }
-  }
-}
-
-function updatePathList(segments) {
-  var pathset = {};
-  var _iteratorNormalCompletion6 = true;
-  var _didIteratorError6 = false;
-  var _iteratorError6 = undefined;
-
-  try {
-    for (var _iterator6 = segments[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
-      var feature = _step6.value;
-
-      var path = feature.properties.pathnum;
-      pathset[feature.properties.pathnum] = null;
-    }
-  } catch (err) {
-    _didIteratorError6 = true;
-    _iteratorError6 = err;
-  } finally {
-    try {
-      if (!_iteratorNormalCompletion6 && _iterator6.return) {
-        _iterator6.return();
-      }
-    } finally {
-      if (_didIteratorError6) {
-        throw _iteratorError6;
-      }
-    }
-  }
-
-  var pathArray = Object.keys(pathset);
-  pathArray.sort(function (a, b) {
-    return a - b;
-  });
-  app.pathitems = [];
-  app.paths = [];
-  app.paths.value = '';
-  var _iteratorNormalCompletion7 = true;
-  var _didIteratorError7 = false;
-  var _iteratorError7 = undefined;
-
-  try {
-    for (var _iterator7 = pathArray[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
-      var p = _step7.value;
-
-      app.paths.push({ pathnum: p });
-    }
-  } catch (err) {
-    _didIteratorError7 = true;
-    _iteratorError7 = err;
-  } finally {
-    try {
-      if (!_iteratorNormalCompletion7 && _iterator7.return) {
-        _iterator7.return();
-      }
-    } finally {
-      if (_didIteratorError7) {
-        throw _iteratorError7;
-      }
-    }
-  }
 }
 
 function queryServer() {
@@ -3726,9 +3556,6 @@ function queryServer() {
   }).then(function (jsonData) {
     personJson = jsonData;
     addSegmentLayer(jsonData);
-    //      updateTripList(jsonData);
-    //      mymap.fitBounds(segmentLayer.getBounds());
-    console.log("boom");
   }).catch(function (error) {
     console.log("err: " + error);
   });
@@ -3736,11 +3563,7 @@ function queryServer() {
 
 function runFilter() {
   if (segmentLayer) segmentLayer.remove();
-
   queryServer();
-
-  // if (app.person) options['cql_filter'] = `person_id='${app.person}'`;
-  // else return;
 }
 
 var app = new Vue({
@@ -3757,10 +3580,7 @@ var app = new Vue({
     queryServer: queryServer,
     runFilter: runFilter
   },
-  watch: {
-    selectedTrips: highlightTrip,
-    selectedPaths: highlightPath
-  }
+  watch: {}
 });
 
 /***/ }),
