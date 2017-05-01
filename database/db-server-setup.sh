@@ -35,8 +35,8 @@ apt-get install -y \
 	build-essential \
 	pgxnclient \
 	postgis \
-	postgis-2.3 \
 	postgresql-9.6 \
+	postgresql-9.6-postgis-2.3 \
 	postgresql-server-dev-9.6 \
 	unzip \
 
@@ -44,11 +44,6 @@ apt-get install -y \
 printf "\n---\nSETTING POSTGRES DB USER PASSWORD\n"
 chpasswd <<< "postgres:$PASSWORD"
 sudo -u postgres psql -d template1 -c "ALTER USER postgres WITH PASSWORD '$PASSWORD';"
-
-# Only start postgres 9.6
-for each in 9.2 9.3 9.4 9.5; do
-	sed -i 's/^auto/disable/' /etc/postgresql/$each/main/start.conf
-done;
 
 # Add postgres network config and tuning settings
 echo "host all all ${SFCTA_NETWORK_MASK} md5" >> /etc/postgresql/9.6/main/pg_hba.conf
