@@ -1,4 +1,3 @@
-/* DORA -- the fast-trips EXPLORAH. */
 'use strict';
 
 // Use npm and babel to support IE11/Safari
@@ -11,8 +10,7 @@ var mymap = L.map('sfmap').setView([37.77, -122.44], 13);
 var url = 'https://api.mapbox.com/styles/v1/mapbox/'+theme+'-v9/tiles/256/{z}/{x}/{y}?access_token={accessToken}';
 var token = 'pk.eyJ1IjoicHNyYyIsImEiOiJjaXFmc2UxanMwM3F6ZnJtMWp3MjBvZHNrIn0._Dmske9er0ounTbBmdRrRQ';
 var attribution ='<a href="http://openstreetmap.org">OpenStreetMap</a> | ' +
-                 '<a href="http://mapbox.com">Mapbox</a> | ' +
-                 '<a href="http://www.sfcta.org">SFCTA</a>';
+                 '<a href="http://mapbox.com">Mapbox</a>';
 L.tileLayer(url, {
   attribution:attribution,
   maxZoom: 18,
@@ -31,9 +29,9 @@ let dark_styles = { normal  : {"color": "#ff7800", "weight":4,  "opacity": 1.0, 
                     popup   : {"color": "#8f8",    "weight":10, "opacity": 1.0, },
 };
 
-let light_styles = {normal  : {"color": "#66f", "weight": 4, "opacity": 1.0 },
-                    selected: {"color": "#6f6", "weight": 10, "opacity": 1.0 },
-                    popup   : {"color": "#ee4", "weight": 10, "opacity": 1.0 }
+let light_styles = {normal  : {"color": "#3c6", "weight": 4, "opacity": 1.0 },
+                    selected: {"color": "#39f", "weight": 10, "opacity": 1.0 },
+                    popup   : {"color": "#33f", "weight": 10, "opacity": 1.0 }
 };
 
 let styles = (theme==='dark' ? dark_styles : light_styles);
@@ -59,6 +57,9 @@ function addSegmentLayer(segments, options={}) {
 let selectedSegment, popupSegment;
 
 function highlightSegment(e) {
+      // don't do anything if we just moused over the already-popped up segment
+      if (e.target == popupSegment) return;
+
       let segment = e.target.feature;
       let cmp_id = segment.segnum2013;
 
@@ -77,6 +78,7 @@ function buildChartHtmlFromCmpData(json) {
 
   for (let entry of json) {
     let speed = Number(entry.avg_speed).toFixed(1);
+    if (speed === 'NaN') continue;
     if (!byYear[entry.year]) byYear[entry.year] = {};
     byYear[entry.year][entry.period] = speed;
   }
@@ -125,10 +127,15 @@ function clickedOnSegment(e) {
                           "<hr/>" +
                           "<div id=\"chart\" style=\"width: 300px; height:250px;\"></div>";
 
-          let popup = L.popup({width:"600",maxwidth:"600"})
-            .setLatLng(e.latlng)
-            .setContent(popupText)
-            .openOn(mymap);
+          let popup = L.popup()
+              .setLatLng(e.latlng)
+              .setContent(popupText)
+              .openOn(mymap);
+
+          popup.on("remove", function(e) {
+            popupSegment.setStyle(styles.normal);
+            popupSegment = null;
+          });
 
           let chartHtml = buildChartHtmlFromCmpData(jsonData);
       }).catch(function(error) {
@@ -157,11 +164,6 @@ function queryServer() {
     });
 }
 
-function runFilter() {
-  if (segmentLayer) segmentLayer.remove();
-  queryServer();
-}
-
 let app = new Vue({
   el: '#panel',
   data: {
@@ -173,9 +175,9 @@ let app = new Vue({
     pathitems: [],
   },
   methods: {
-    queryServer: queryServer,
-    runFilter: runFilter,
   },
   watch: {
   },
 });
+
+queryServer();

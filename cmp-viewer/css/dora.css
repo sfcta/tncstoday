@@ -18,12 +18,12 @@ p {color:#ccc;}
   z-index:10;
   background-color:#567;
   float: right;
+  display: none;
 }
 
 h3 {color: white; padding-top:5px;}
 
 #sfmap {
-  margin-right: 303px;
   height:100%;
 }
 
@@ -35,4 +35,3 @@ h3 {color: white; padding-top:5px;}
 
 .column1 {width:50%; float: left; margin-bottom:20px;}
 .column2 {width:50%; float: right; margin-bottom:20px; z-index:20;}
-
