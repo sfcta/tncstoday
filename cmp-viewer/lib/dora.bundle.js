@@ -3393,7 +3393,7 @@ var dark_styles = { normal: { "color": "#ff7800", "weight": 4, "opacity": 1.0 },
   popup: { "color": "#8f8", "weight": 10, "opacity": 1.0 }
 };
 
-var light_styles = { normal: { "color": "#0c9", "weight": 4, "opacity": 1.0 },
+var light_styles = { normal: { "color": "#3c6", "weight": 4, "opacity": 1.0 },
   selected: { "color": "#39f", "weight": 10, "opacity": 1.0 },
   popup: { "color": "#33f", "weight": 10, "opacity": 1.0 }
 };
@@ -3515,6 +3515,8 @@ function buildChartHtmlFromCmpData(json) {
   });
 }
 
+var api_server = 'http://ec2-54-67-72-207.us-west-1.compute.amazonaws.com/api/';
+
 function clickedOnSegment(e) {
   var segment = e.target.feature;
   var cmp_id = segment.segnum2013;
@@ -3529,7 +3531,7 @@ function clickedOnSegment(e) {
   if (chart) chart.parentNode.removeChild(chart);
 
   // fetch the CMP details
-  var finalUrl = 'http://172.30.1.208/api/auto_speeds?cmp_id=eq.' + cmp_id;
+  var finalUrl = api_server + 'auto_speeds?cmp_id=eq.' + cmp_id;
   fetch(finalUrl).then(function (resp) {
     return resp.json();
   }).then(function (jsonData) {
@@ -3549,7 +3551,7 @@ function clickedOnSegment(e) {
 }
 
 function queryServer() {
-  var geoserverUrl = 'http://172.30.1.208/api/json_segments?';
+  var geoserverUrl = api_server + 'json_segments?';
 
   // convert option list into a url parameter string
   var esc = encodeURIComponent;

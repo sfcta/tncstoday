@@ -106,6 +106,9 @@ function buildChartHtmlFromCmpData(json) {
   });
 }
 
+
+let api_server = 'http://ec2-54-67-72-207.us-west-1.compute.amazonaws.com/api/';
+
 function clickedOnSegment(e) {
       let segment = e.target.feature;
       let cmp_id = segment.segnum2013;
@@ -120,7 +123,7 @@ function clickedOnSegment(e) {
       if (chart) chart.parentNode.removeChild(chart);
 
       // fetch the CMP details
-      let finalUrl = 'http://172.30.1.208/api/auto_speeds?cmp_id=eq.' + cmp_id;
+      let finalUrl = api_server + 'auto_speeds?cmp_id=eq.' + cmp_id;
       fetch(finalUrl).then((resp) => resp.json()).then(function(jsonData) {
           let popupText = "<b>"+segment.cmp_name+" "+segment.cmp_dir+"-bound</b><br/>" +
                           segment.cmp_from + " to " + segment.cmp_to +
@@ -144,7 +147,7 @@ function clickedOnSegment(e) {
 }
 
 function queryServer() {
-  const geoserverUrl = 'http://172.30.1.208/api/json_segments?';
+  const geoserverUrl = api_server + 'json_segments?';
 
   // convert option list into a url parameter string
   var esc = encodeURIComponent;
