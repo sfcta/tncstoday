@@ -7,7 +7,7 @@ import vueSlider from 'vue-slider-component';
 
 let theme = "dark";
 
-var mymap = L.map('sfmap').setView([37.77, -122.44], 14);
+var mymap = L.map('sfmap').setView([37.79, -122.44], 14);
 var url = 'https://api.mapbox.com/styles/v1/mapbox/'+theme+'-v9/tiles/256/{z}/{x}/{y}?access_token={accessToken}';
 var token = 'pk.eyJ1IjoicHNyYyIsImEiOiJjaXFmc2UxanMwM3F6ZnJtMWp3MjBvZHNrIn0._Dmske9er0ounTbBmdRrRQ';
 var attribution ='<a href="http://openstreetmap.org">OpenStreetMap</a> | ' +
@@ -18,8 +18,8 @@ L.tileLayer(url, {
   accessToken:token,
 }).addTo(mymap);
 
-var personJson;
-var segmentLayer;
+let segmentLayer;
+let selectedSegment, popupSegment, hoverColor, popupColor;
 
 var options = {
   select: 'geometry,segnum2013,cmp_name,cmp_from,cmp_to,cmp_dir,cmp_len',
@@ -39,6 +39,7 @@ let losColor = {'A':'#060', 'B':'#9f0', 'C':'#ff3', 'D':'#f90', 'E':'#f60', 'F':
 
 let styles = (theme==='dark' ? dark_styles : light_styles);
 
+
 function addSegmentLayer(segments, options={}) {
   // TODO: figure out why PostGIS geojson isn't in exactly the right format.
   for (let segment of segments) {
@@ -54,6 +55,12 @@ function addSegmentLayer(segments, options={}) {
       });
     },
   });
+
+  if (mymap.segmentLayer) {
+    selectedSegment = popupSegment = hoverColor = popupColor = null;
+    mymap.removeLayer(segmentLayer);
+    segmentLayer = null;
+  }
   segmentLayer.addTo(mymap);
 }
 
@@ -61,12 +68,10 @@ function styleByLosColor(segment) {
   let cmp_id = segment.segnum2013;
   let los = segmentLos[cmp_id];
   let color = losColor[los];
-  if (!color) color = "#f70";
+  if (!color) color = "#446";
   return {color: color, weight: 4, opacity: 1.0};
 }
 
-
-let selectedSegment, popupSegment, hoverColor, popupColor;
 
 function hoverOnSegment(e) {
       // don't do anything if we just moused over the already-popped up segment
@@ -183,8 +188,8 @@ function queryServer() {
   fetch(finalUrl)
     .then((resp) => resp.json())
     .then(function(jsonData) {
-      personJson = jsonData;
-      colorByLOS(app.sliderValue);
+      let personJson = jsonData;
+      colorByLOS(personJson, app.sliderValue);
     })
     .catch(function(error) {
       console.log("err: "+error);
@@ -193,7 +198,7 @@ function queryServer() {
 
 let segmentLos = {};
 
-function colorByLOS(year) {
+function colorByLOS(personJson, year) {
   let options = {
     year: 'eq.'+ year,
     period: 'eq.' + chosenPeriod,
@@ -211,7 +216,6 @@ function colorByLOS(year) {
       segmentLos[thing.cmp_id] = thing.los_HCM1985;
     }
     addSegmentLayer(personJson);
-
   }).catch(function(error) {
     console.log(error);
   });
@@ -236,7 +240,8 @@ function pickPM(thing) {
 
 // SLIDER ----
 let timeSlider = {
-          value: 2015,
+          data: [ 1991, "1992/3", 1995, 1997, 1999, 2001, 2004, 2006, 2007, 2009, 2011, 2013, 2015 ],
+          sliderValue: 2015,
 					width: 'auto',
 					height: 6,
 					direction: 'horizontal',
@@ -254,12 +259,11 @@ let timeSlider = {
 					reverse: false,
           labelActiveStyle: {  "color": "#fff"},
           piecewiseStyle: {
-            "backgroundColor": "#aaa",
+            "backgroundColor": "#888",
             "visibility": "visible",
             "width": "14px",
             "height": "14px"
           },
-          data: [ 1991, "1992/3", 1995, 1997, 1999, 2001, 2004, 2006, 2007, 2009, 2011, 2013, 2015 ],
 };
 // ------
 
