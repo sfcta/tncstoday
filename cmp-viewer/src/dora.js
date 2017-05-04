@@ -6,7 +6,7 @@ import 'isomorphic-fetch';
 
 let theme = "dark";
 
-var mymap = L.map('sfmap').setView([37.77, -122.44], 13);
+var mymap = L.map('sfmap').setView([37.77, -122.44], 14);
 var url = 'https://api.mapbox.com/styles/v1/mapbox/'+theme+'-v9/tiles/256/{z}/{x}/{y}?access_token={accessToken}';
 var token = 'pk.eyJ1IjoicHNyYyIsImEiOiJjaXFmc2UxanMwM3F6ZnJtMWp3MjBvZHNrIn0._Dmske9er0ounTbBmdRrRQ';
 var attribution ='<a href="http://openstreetmap.org">OpenStreetMap</a> | ' +
@@ -61,7 +61,6 @@ function styleByLosColor(segment) {
   let los = segmentLos[cmp_id];
   let color = losColor[los];
   if (!color) color = "#f70";
-  console.log(cmp_id, los, color);
   return {color: color, weight: 4, opacity: 1.0};
 }
 
@@ -196,7 +195,8 @@ let segmentLos = {};
 function colorByLOS(year) {
   let options = {
     year: 'eq.'+ year,
-    select: 'cmp_id,name_HCM1985,from,to,dir,avg_speed,year,los_HCM1985',
+    period: 'eq.' + chosenPeriod,
+    select: 'cmp_id,name_HCM1985,from,to,dir,avg_speed,year,period,los_HCM1985',
   };
   const speedUrl = api_server + 'auto_speeds?';
   var params = [];
@@ -209,7 +209,6 @@ function colorByLOS(year) {
       let thing = data[segment];
       segmentLos[thing.cmp_id] = thing.los_HCM1985;
     }
-    console.log(segmentLos);
     addSegmentLayer(personJson);
 
   }).catch(function(error) {
@@ -218,11 +217,31 @@ function colorByLOS(year) {
 
 }
 
+let chosenPeriod = 'AM';
+
+function pickAM(thing) {
+  app.isAMactive = true;
+  app.isPMactive = false;
+  chosenPeriod = 'AM';
+  queryServer();
+}
+
+function pickPM(thing) {
+  app.isAMactive = false;
+  app.isPMactive = true;
+  chosenPeriod = 'PM';
+  queryServer();
+}
+
 let app = new Vue({
   el: '#panel',
   data: {
+    isAMactive: true,
+    isPMactive: false,
   },
   methods: {
+    pickAM: pickAM,
+    pickPM: pickPM,
   },
   watch: {
   },

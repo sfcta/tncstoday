@@ -3371,7 +3371,7 @@ __webpack_require__(115);
 
 var theme = "dark";
 
-var mymap = L.map('sfmap').setView([37.77, -122.44], 13);
+var mymap = L.map('sfmap').setView([37.77, -122.44], 14);
 var url = 'https://api.mapbox.com/styles/v1/mapbox/' + theme + '-v9/tiles/256/{z}/{x}/{y}?access_token={accessToken}';
 var token = 'pk.eyJ1IjoicHNyYyIsImEiOiJjaXFmc2UxanMwM3F6ZnJtMWp3MjBvZHNrIn0._Dmske9er0ounTbBmdRrRQ';
 var attribution = '<a href="http://openstreetmap.org">OpenStreetMap</a> | ' + '<a href="http://mapbox.com">Mapbox</a>';

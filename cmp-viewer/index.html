@@ -38,8 +38,12 @@
     <div id="container">
 
       <div id="panel">
-          <h3><b>CMP &raquo; AUTO SPEEDS</b></h3>
-          <hr/>
+          <h3><b>AUTO SPEEDS &raquo; SFCTA CONGESTION MONITORING PROGRAM</b></h3>
+          <button @click="pickAM" v-bind:class="{ active: isAMactive }"
+                   class="small ui inverted red button">AM</button>
+          <button @click="pickPM" v-bind:class="{ active: isPMactive }"
+                   class="small ui inverted blue button">PM</button>
+          <h3 />
       </div>
 
       <div id="sfmap">
