@@ -3389,14 +3389,16 @@ var options = {
 };
 
 var dark_styles = { normal: { "color": "#ff7800", "weight": 4, "opacity": 1.0 },
-  selected: { "color": "#fec", "weight": 10, "opacity": 1.0 },
-  popup: { "color": "#8f8", "weight": 10, "opacity": 1.0 }
+  selected: { "color": "#39f", "weight": 10, "opacity": 1.0 },
+  popup: { "color": "#33f", "weight": 10, "opacity": 1.0 }
 };
 
 var light_styles = { normal: { "color": "#3c6", "weight": 4, "opacity": 1.0 },
   selected: { "color": "#39f", "weight": 10, "opacity": 1.0 },
   popup: { "color": "#33f", "weight": 10, "opacity": 1.0 }
 };
+
+var losColor = { 'A': '#060', 'B': '#9f0', 'C': '#ff3', 'D': '#f90', 'E': '#f60', 'F': '#c00' };
 
 var styles = theme === 'dark' ? dark_styles : light_styles;
 
@@ -3431,9 +3433,9 @@ function addSegmentLayer(segments) {
   }
 
   segmentLayer = L.geoJSON(segments, {
-    style: styles.normal,
+    style: styleByLosColor,
     onEachFeature: function onEachFeature(feature, layer) {
-      layer.on({ mouseover: highlightSegment,
+      layer.on({ mouseover: hoverOnSegment,
         click: clickedOnSegment
       });
     }
@@ -3441,18 +3443,34 @@ function addSegmentLayer(segments) {
   segmentLayer.addTo(mymap);
 }
 
-var selectedSegment = void 0,
-    popupSegment = void 0;
+function styleByLosColor(segment) {
+  var cmp_id = segment.segnum2013;
+  var los = segmentLos[cmp_id];
+  var color = losColor[los];
+  if (!color) color = "#f70";
+  console.log(cmp_id, los, color);
+  return { color: color, weight: 4, opacity: 1.0 };
+}
 
-function highlightSegment(e) {
+var selectedSegment = void 0,
+    popupSegment = void 0,
+    hoverColor = void 0,
+    popupColor = void 0;
+
+function hoverOnSegment(e) {
   // don't do anything if we just moused over the already-popped up segment
   if (e.target == popupSegment) return;
 
   var segment = e.target.feature;
   var cmp_id = segment.segnum2013;
 
+  // return previously-hovered segment to its original color
   if (selectedSegment != popupSegment) {
-    if (selectedSegment) selectedSegment.setStyle(styles.normal);
+    if (selectedSegment) {
+      var _cmp_id = selectedSegment.feature.segnum2013;
+      var color = losColor[segmentLos[_cmp_id]];
+      selectedSegment.setStyle({ color: color, weight: 4, opacity: 1.0 });
+    }
   }
 
   selectedSegment = e.target;
@@ -3522,7 +3540,11 @@ function clickedOnSegment(e) {
   var cmp_id = segment.segnum2013;
 
   // highlight it
-  if (popupSegment) popupSegment.setStyle(styles.normal);
+  if (popupSegment) {
+    var _cmp_id2 = popupSegment.feature.segnum2013;
+    var color = losColor[segmentLos[_cmp_id2]];
+    popupSegment.setStyle({ color: color, weight: 4, opacity: 1.0 });
+  }
   e.target.setStyle(styles.popup);
   popupSegment = e.target;
 
@@ -3540,7 +3562,9 @@ function clickedOnSegment(e) {
     var popup = L.popup().setLatLng(e.latlng).setContent(popupText).openOn(mymap);
 
     popup.on("remove", function (e) {
-      popupSegment.setStyle(styles.normal);
+      var cmp_id = popupSegment.feature.segnum2013;
+      var color = losColor[segmentLos[cmp_id]];
+      popupSegment.setStyle({ color: color, weight: 4, opacity: 1.0 });
       popupSegment = null;
     });
 
@@ -3550,11 +3574,12 @@ function clickedOnSegment(e) {
   });
 }
 
+var esc = encodeURIComponent;
+
 function queryServer() {
   var geoserverUrl = api_server + 'json_segments?';
 
   // convert option list into a url parameter string
-  var esc = encodeURIComponent;
   var params = [];
   for (var key in options) {
     params.push(esc(key) + '=' + esc(options[key]));
@@ -3565,22 +3590,43 @@ function queryServer() {
     return resp.json();
   }).then(function (jsonData) {
     personJson = jsonData;
-    addSegmentLayer(jsonData);
+    colorByLOS(2015);
   }).catch(function (error) {
     console.log("err: " + error);
   });
 }
 
+var segmentLos = {};
+
+function colorByLOS(year) {
+  var options = {
+    year: 'eq.' + year,
+    select: 'cmp_id,name_HCM1985,from,to,dir,avg_speed,year,los_HCM1985'
+  };
+  var speedUrl = api_server + 'auto_speeds?';
+  var params = [];
+  for (var key in options) {
+    params.push(esc(key) + '=' + esc(options[key]));
+  }var finalUrl = speedUrl + params.join('&');
+
+  fetch(finalUrl).then(function (resp) {
+    return resp.json();
+  }).then(function (data) {
+    segmentLos = {};
+    for (var segment in data) {
+      var thing = data[segment];
+      segmentLos[thing.cmp_id] = thing.los_HCM1985;
+    }
+    console.log(segmentLos);
+    addSegmentLayer(personJson);
+  }).catch(function (error) {
+    console.log(error);
+  });
+}
+
 var app = new Vue({
   el: '#panel',
-  data: {
-    person: '',
-    trips: [],
-    paths: [],
-    selectedTrips: [],
-    selectedPaths: [],
-    pathitems: []
-  },
+  data: {},
   methods: {},
   watch: {}
 });

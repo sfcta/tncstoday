@@ -25,14 +25,16 @@ var options = {
 };
 
 let dark_styles = { normal  : {"color": "#ff7800", "weight":4,  "opacity": 1.0, },
-                    selected: {"color": "#fec",    "weight":10, "opacity": 1.0, },
-                    popup   : {"color": "#8f8",    "weight":10, "opacity": 1.0, },
+                    selected: {"color": "#39f",    "weight":10, "opacity": 1.0, },
+                    popup   : {"color": "#33f",    "weight":10, "opacity": 1.0, },
 };
 
 let light_styles = {normal  : {"color": "#3c6", "weight": 4, "opacity": 1.0 },
                     selected: {"color": "#39f", "weight": 10, "opacity": 1.0 },
                     popup   : {"color": "#33f", "weight": 10, "opacity": 1.0 }
 };
+
+let losColor = {'A':'#060', 'B':'#9f0', 'C':'#ff3', 'D':'#f90', 'E':'#f60', 'F':'#c00'};
 
 let styles = (theme==='dark' ? dark_styles : light_styles);
 
@@ -44,9 +46,9 @@ function addSegmentLayer(segments, options={}) {
   }
 
   segmentLayer = L.geoJSON(segments, {
-    style: styles.normal,
+    style: styleByLosColor,
     onEachFeature: function(feature, layer) {
-      layer.on({ mouseover: highlightSegment,
+      layer.on({ mouseover: hoverOnSegment,
                  click : clickedOnSegment,
       });
     },
@@ -54,17 +56,32 @@ function addSegmentLayer(segments, options={}) {
   segmentLayer.addTo(mymap);
 }
 
-let selectedSegment, popupSegment;
+function styleByLosColor(segment) {
+  let cmp_id = segment.segnum2013;
+  let los = segmentLos[cmp_id];
+  let color = losColor[los];
+  if (!color) color = "#f70";
+  console.log(cmp_id, los, color);
+  return {color: color, weight: 4, opacity: 1.0};
+}
 
-function highlightSegment(e) {
+
+let selectedSegment, popupSegment, hoverColor, popupColor;
+
+function hoverOnSegment(e) {
       // don't do anything if we just moused over the already-popped up segment
       if (e.target == popupSegment) return;
 
       let segment = e.target.feature;
       let cmp_id = segment.segnum2013;
 
+      // return previously-hovered segment to its original color
       if (selectedSegment != popupSegment) {
-        if (selectedSegment) selectedSegment.setStyle(styles.normal);
+        if (selectedSegment) {
+          let cmp_id = selectedSegment.feature.segnum2013;
+          let color = losColor[segmentLos[cmp_id]];
+          selectedSegment.setStyle({color:color, weight:4, opacity:1.0});
+        }
       }
 
       selectedSegment = e.target;
@@ -114,7 +131,11 @@ function clickedOnSegment(e) {
       let cmp_id = segment.segnum2013;
 
       // highlight it
-      if (popupSegment) popupSegment.setStyle(styles.normal);
+      if (popupSegment) {
+        let cmp_id = popupSegment.feature.segnum2013;
+        let color = losColor[segmentLos[cmp_id]];
+        popupSegment.setStyle({color:color, weight:4, opacity:1.0});
+      }
       e.target.setStyle(styles.popup);
       popupSegment = e.target;
 
@@ -136,7 +157,9 @@ function clickedOnSegment(e) {
               .openOn(mymap);
 
           popup.on("remove", function(e) {
-            popupSegment.setStyle(styles.normal);
+            let cmp_id = popupSegment.feature.segnum2013;
+            let color = losColor[segmentLos[cmp_id]];
+            popupSegment.setStyle({color:color, weight:4, opacity:1.0});
             popupSegment = null;
           });
 
@@ -146,11 +169,12 @@ function clickedOnSegment(e) {
       });
 }
 
+let esc = encodeURIComponent;
+
 function queryServer() {
   const geoserverUrl = api_server + 'json_segments?';
 
   // convert option list into a url parameter string
-  var esc = encodeURIComponent;
   var params = [];
   for (let key in options) params.push(esc(key) + '=' + esc(options[key]));
   let finalUrl = geoserverUrl + params.join('&');
@@ -160,22 +184,43 @@ function queryServer() {
     .then((resp) => resp.json())
     .then(function(jsonData) {
       personJson = jsonData;
-      addSegmentLayer(jsonData);
+      colorByLOS(2015);
     })
     .catch(function(error) {
       console.log("err: "+error);
     });
 }
 
+let segmentLos = {};
+
+function colorByLOS(year) {
+  let options = {
+    year: 'eq.'+ year,
+    select: 'cmp_id,name_HCM1985,from,to,dir,avg_speed,year,los_HCM1985',
+  };
+  const speedUrl = api_server + 'auto_speeds?';
+  var params = [];
+  for (let key in options) params.push(esc(key) + '=' + esc(options[key]));
+  let finalUrl = speedUrl + params.join('&');
+
+  fetch(finalUrl).then((resp) => resp.json()).then(function(data) {
+    segmentLos = {};
+    for (let segment in data) {
+      let thing = data[segment];
+      segmentLos[thing.cmp_id] = thing.los_HCM1985;
+    }
+    console.log(segmentLos);
+    addSegmentLayer(personJson);
+
+  }).catch(function(error) {
+    console.log(error);
+  });
+
+}
+
 let app = new Vue({
   el: '#panel',
   data: {
-    person: '',
-    trips: [],
-    paths: [],
-    selectedTrips: [],
-    selectedPaths: [],
-    pathitems: [],
   },
   methods: {
   },
