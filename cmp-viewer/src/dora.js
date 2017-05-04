@@ -3,6 +3,7 @@
 // Use npm and babel to support IE11/Safari
 import 'babel-polyfill';
 import 'isomorphic-fetch';
+import vueSlider from 'vue-slider-component';
 
 let theme = "dark";
 
@@ -183,7 +184,7 @@ function queryServer() {
     .then((resp) => resp.json())
     .then(function(jsonData) {
       personJson = jsonData;
-      colorByLOS(2015);
+      colorByLOS(app.sliderValue);
     })
     .catch(function(error) {
       console.log("err: "+error);
@@ -233,18 +234,58 @@ function pickPM(thing) {
   queryServer();
 }
 
+// SLIDER ----
+let timeSlider = {
+          value: 2015,
+					width: 'auto',
+					height: 6,
+					direction: 'horizontal',
+					dotSize: 16,
+					eventType: 'auto',
+					disabled: false,
+					show: true,
+					realTime: false,
+					tooltip: 'always',
+					clickable: true,
+					tooltipDir: 'bottom',
+					piecewise: true,
+          piecewiseLabel: false,
+					lazy: false,
+					reverse: false,
+          labelActiveStyle: {  "color": "#fff"},
+          piecewiseStyle: {
+            "backgroundColor": "#aaa",
+            "visibility": "visible",
+            "width": "14px",
+            "height": "14px"
+          },
+          data: [ 1991, "1992/3", 1995, 1997, 1999, 2001, 2004, 2006, 2007, 2009, 2011, 2013, 2015 ],
+};
+// ------
+
+function sliderChanged(thing) {
+  console.log(thing);
+  queryServer();
+}
+
 let app = new Vue({
   el: '#panel',
   data: {
     isAMactive: true,
     isPMactive: false,
+    sliderValue: 2015,
+    timeSlider: timeSlider,
   },
   methods: {
     pickAM: pickAM,
     pickPM: pickPM,
   },
   watch: {
+    sliderValue: sliderChanged,
   },
+  components: {
+    vueSlider,
+  }
 });
 
 queryServer();
