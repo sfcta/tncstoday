@@ -3399,6 +3399,8 @@ var selectedSegment = void 0,
     hoverColor = void 0,
     popupColor = void 0;
 
+var speedCache = {};
+
 var options = {
   select: 'geometry,segnum2013,cmp_name,cmp_from,cmp_to,cmp_dir,cmp_len'
 };
@@ -3592,13 +3594,13 @@ function clickedOnSegment(e) {
 var esc = encodeURIComponent;
 
 function queryServer() {
-  var geoserverUrl = api_server + 'json_segments?';
+  var segmentUrl = api_server + 'json_segments?';
 
   // convert option list into a url parameter string
   var params = [];
   for (var key in options) {
     params.push(esc(key) + '=' + esc(options[key]));
-  }var finalUrl = geoserverUrl + params.join('&');
+  }var finalUrl = segmentUrl + params.join('&');
 
   // Fetch the segments
   fetch(finalUrl).then(function (resp) {
@@ -3614,6 +3616,18 @@ function queryServer() {
 var segmentLos = {};
 
 function colorByLOS(personJson, year) {
+
+  // Don't re-fetch if we already have the color data
+  if (year in speedCache) {
+    console.log("Using cache: " + year);
+    segmentLos = speedCache[year];
+    segmentLayer.clearLayers();
+    addSegmentLayer(personJson);
+    return;
+  }
+
+  console.log("Not in cache: fetching " + year);
+
   var options = {
     year: 'eq.' + year,
     period: 'eq.' + chosenPeriod,
@@ -3628,11 +3642,17 @@ function colorByLOS(personJson, year) {
   fetch(finalUrl).then(function (resp) {
     return resp.json();
   }).then(function (data) {
-    segmentLos = {};
+    var losData = {};
     for (var segment in data) {
       var thing = data[segment];
-      segmentLos[thing.cmp_id] = thing.los_HCM1985;
+      losData[thing.cmp_id] = thing.los_HCM1985;
     }
+    // save it for later
+    speedCache[year] = losData;
+    segmentLos = losData;
+
+    // add it to the map
+    if (segmentLayer) segmentLayer.clearLayers();
     addSegmentLayer(personJson);
   }).catch(function (error) {
     console.log(error);
