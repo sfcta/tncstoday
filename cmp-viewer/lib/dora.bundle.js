@@ -3383,6 +3383,8 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 var theme = "dark";
 
+var api_server = 'http://api.sfcta.org/api/';
+
 var mymap = L.map('sfmap').setView([37.79, -122.44], 14);
 var url = 'https://api.mapbox.com/styles/v1/mapbox/' + theme + '-v9/tiles/256/{z}/{x}/{y}?access_token={accessToken}';
 var token = 'pk.eyJ1IjoicHNyYyIsImEiOiJjaXFmc2UxanMwM3F6ZnJtMWp3MjBvZHNrIn0._Dmske9er0ounTbBmdRrRQ';
@@ -3550,8 +3552,6 @@ function buildChartHtmlFromCmpData(json) {
   });
 }
 
-var api_server = 'http://ec2-54-67-72-207.us-west-1.compute.amazonaws.com/api/';
-
 function clickedOnSegment(e) {
   var segment = e.target.feature;
   var cmp_id = segment.segnum2013;
@@ -3619,14 +3619,11 @@ function colorByLOS(personJson, year) {
 
   // Don't re-fetch if we already have the color data
   if (year in speedCache) {
-    console.log("Using cache: " + year);
     segmentLos = speedCache[year];
     segmentLayer.clearLayers();
     addSegmentLayer(personJson);
     return;
   }
-
-  console.log("Not in cache: fetching " + year);
 
   var options = {
     year: 'eq.' + year,

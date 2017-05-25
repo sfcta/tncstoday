@@ -7,6 +7,8 @@ import vueSlider from 'vue-slider-component';
 
 let theme = "dark";
 
+let api_server = 'http://api.sfcta.org/api/';
+
 var mymap = L.map('sfmap').setView([37.79, -122.44], 14);
 var url = 'https://api.mapbox.com/styles/v1/mapbox/'+theme+'-v9/tiles/256/{z}/{x}/{y}?access_token={accessToken}';
 var token = 'pk.eyJ1IjoicHNyYyIsImEiOiJjaXFmc2UxanMwM3F6ZnJtMWp3MjBvZHNrIn0._Dmske9er0ounTbBmdRrRQ';
@@ -129,9 +131,6 @@ function buildChartHtmlFromCmpData(json) {
     xLabelAngle: 45,
   });
 }
-
-
-let api_server = 'http://ec2-54-67-72-207.us-west-1.compute.amazonaws.com/api/';
 
 function clickedOnSegment(e) {
       let segment = e.target.feature;
