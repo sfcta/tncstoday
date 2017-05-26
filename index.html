@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>TNC Explorer</title>
+
+    <!-- FAVICONS -->
+    <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+    <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+    <meta name="theme-color" content="#ffffff">
+
+    <!-- LEAFLET -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.3/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.0.3/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/vue"></script>
+
+    <!-- SEMANTIC UI -->
+    <link rel="stylesheet" type="text/css" href="semantic/semantic.min.css">
+    <script
+      src="https://code.jquery.com/jquery-3.1.1.min.js"
+      integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
+      crossorigin="anonymous"></script>
+    <script src="semantic/semantic.min.js"></script>
+
+    <!-- IONICONS -->
+    <link rel="stylesheet" href="css/ionicons.min.css">
+    <link rel="stylesheet" href="css/leaflet.awesome-markers.css">
+    <script src="src/leaflet.awesome-markers.min.js"></script>
+
+    <!-- MORRIS CHARTS -->
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/morris.js/0.5.1/morris.css">
+    <script src="//cdnjs.cloudflare.com/ajax/libs/raphael/2.1.0/raphael-min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/morris.js/0.5.1/morris.min.js"></script>
+
+    <link rel="stylesheet" href="css/dora.css" />
+  </head>
+
+  <body>
+    <div id="container">
+
+      <div id="panel">
+          <div class="dashboard">
+            <h3><b>TNC EXPLORER &raquo; SAN FRANCISCO COUNTY TRANSPORTATION AUTHORITY</b></h3>
+            <div id="picker">
+              <div class="column1">
+                <button @click="pickAM" v-bind:class="{ active: isAMactive }"
+                         class="small ui inverted red button">AM</button>
+                <button @click="pickPM" v-bind:class="{ active: isPMactive }"
+                         class="small ui inverted blue button">PM</button>
+              </div>
+              <div class="column2">
+                  <h4>Day of Week:
+                  <!--<vue-slider v-bind="timeSlider" v-model="sliderValue"></vue-slider>-->
+                  </h4>
+              </div>
+            </div>
+            <h3 />
+          </div>
+      </div>
+
+      <div id="sfmap">
+      </div>
+
+    </div>
+
+    <!---<script type="application/javascript" src="lib/main.bundle.js"></script>-->
+    <script type="application/javascript" src="src/main.js"></script>
+  </body>
+</html>
