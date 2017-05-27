@@ -43,13 +43,13 @@
             <div id="picker">
               <div class="column1">
                 <button @click="pickAM" v-bind:class="{ active: isAMactive }"
-                         class="small ui inverted red button">AM</button>
+                         class="small ui inverted red button">Available Trips</button>
                 <button @click="pickPM" v-bind:class="{ active: isPMactive }"
-                         class="small ui inverted blue button">PM</button>
+                         class="small ui inverted blue button">Accepted Trips</button>
               </div>
               <div class="column2">
                   <h4>Day of Week:
-                  <!--<vue-slider v-bind="timeSlider" v-model="sliderValue"></vue-slider>-->
+                  <vue-slider v-bind="timeSlider" v-model="sliderValue"></vue-slider>
                   </h4>
               </div>
             </div>
@@ -62,7 +62,7 @@
 
     </div>
 
-    <!---<script type="application/javascript" src="lib/main.bundle.js"></script>-->
-    <script type="application/javascript" src="src/main.js"></script>
+    <script type="application/javascript" src="lib/main.bundle.js"></script>
+    <!--<script type="application/javascript" src="src/main.js"></script>-->
   </body>
 </html>
