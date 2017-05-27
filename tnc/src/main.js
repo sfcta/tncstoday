@@ -1,15 +1,15 @@
 'use strict';
 
 // Use npm and babel to support IE11/Safari
-//import 'babel-polyfill';
-//import 'isomorphic-fetch';
-//import vueSlider from 'vue-slider-component';
+import 'babel-polyfill';
+import 'isomorphic-fetch';
+import vueSlider from 'vue-slider-component';
 
 let theme = "dark";
 
-let api_server = 'http://api.sfcta.org/tnc/';
+let api_server = 'http://172.30.1.135/tnc/';
 
-var mymap = L.map('sfmap').setView([37.79, -122.44], 14);
+var mymap = L.map('sfmap').setView([37.77, -122.44], 13);
 var url = 'https://api.mapbox.com/styles/v1/mapbox/'+theme+'-v9/tiles/256/{z}/{x}/{y}?access_token={accessToken}';
 var token = 'pk.eyJ1IjoicHNyYyIsImEiOiJjaXFmc2UxanMwM3F6ZnJtMWp3MjBvZHNrIn0._Dmske9er0ounTbBmdRrRQ';
 var attribution ='<a href="http://openstreetmap.org">OpenStreetMap</a> | ' +
@@ -26,9 +26,16 @@ let selectedSegment, popupSegment, hoverColor, popupColor;
 let speedCache = {};
 let tripTotals = {};
 
+let day = 0;
+
+let chosenPeriod = 'avail_trips';
+
 var taz_fields = {
   select: 'taz,geometry',
 };
+
+// no ubers on the farallon islands
+let skipTazs = new Set([384, 385, 313, 305 ]);
 
 let dark_styles = { normal  : {fillOpacity: 0.8, opacity: 0.0},
                     selected: {fillOpacity: 0.4, color: "#fff", opacity: 1.0},
@@ -57,22 +64,25 @@ function getColor(numTrips) {
 }
 
 
+let tazLayers = {};
+
 function addTazLayer(tazs, options={}) {
   for (let taz of tazs) {
     if (taz.taz > 981) continue;
+    if (skipTazs.has(taz.taz)) continue;
+
     let json = JSON.parse(taz.geometry);
     json['taz'] = taz.taz;
 
     let shade = '#222';
 
     if (taz.taz in tripTotals) {
-      let mine = tripTotals[parseInt(taz.taz)][5];
-      shade = getColor(mine['avail_trips']);
+      let mine = tripTotals[parseInt(taz.taz)][day];
+      shade = getColor(mine[chosenPeriod]);
       if (!shade) shade = '#222';
     }
 
-
-    L.geoJSON(json, {
+    let layer = L.geoJSON(json, {
       style: {
         opacity:0.0,
         fillColor: shade,
@@ -84,7 +94,11 @@ function addTazLayer(tazs, options={}) {
                    click : clickedOnTaz,
         });
       },
-    }).addTo(mymap);
+    });
+
+    // hang onto this layer so we can do stuff to it later
+    tazLayers[parseInt(taz.taz)] = layer;
+    layer.addTo(mymap);
   }
 }
 
@@ -179,6 +193,8 @@ function buildChartHtmlFromCmpData(json) {
 
 function clickedOnTaz(e) {
       let segment = e.target.feature;
+
+      console.log(segment);
       let cmp_id = segment.segnum2013;
 
       // highlight it
@@ -321,26 +337,24 @@ function colorByLOS(personJson, year) {
 
 }
 
-let chosenPeriod = 'AM';
-
 function pickAM(thing) {
   app.isAMactive = true;
   app.isPMactive = false;
-  chosenPeriod = 'AM';
-  //queryServer();
+  chosenPeriod = 'avail_trips';
+  updateColors();
 }
 
 function pickPM(thing) {
   app.isAMactive = false;
   app.isPMactive = true;
-  chosenPeriod = 'PM';
-  //queryServer();
+  chosenPeriod = 'accpt_trips';
+  updateColors();
 }
 
 // SLIDER ----
 let timeSlider = {
           data: [ "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun", ],
-          sliderValue: "Fri",
+          sliderValue: "Mon",
 					width: 'auto',
 					height: 6,
 					direction: 'horizontal',
@@ -353,12 +367,12 @@ let timeSlider = {
 					clickable: true,
 					tooltipDir: 'bottom',
 					piecewise: true,
-          piecewiseLabel: false,
+          piecewiseLabel: true,
 					lazy: false,
 					reverse: false,
           labelActiveStyle: {  "color": "#fff"},
           piecewiseStyle: {
-            "backgroundColor": "#888",
+            "backgroundColor": "#fff",
             "visibility": "visible",
             "width": "14px",
             "height": "14px"
@@ -367,8 +381,26 @@ let timeSlider = {
 // ------
 
 function sliderChanged(thing) {
-  console.log(thing);
-  //queryServer();
+  let newDay = timeSlider.data.indexOf(thing);
+  day = parseInt(newDay);
+
+  updateColors();
+}
+
+// Update all colors based on trip totals
+function updateColors() {
+  for (let taz in tazLayers) {
+    let shade = '#222';
+    let layer = tazLayers[taz];
+
+    let tazData = tripTotals[parseInt(taz)];
+    if (tazData) {
+      let dayData = tazData[day];
+      shade = getColor(dayData[chosenPeriod]);
+      if (!shade) shade = '#222';
+    }
+    layer.setStyle({fillColor: shade});
+  }
 }
 
 let app = new Vue({
@@ -387,7 +419,7 @@ let app = new Vue({
     sliderValue: sliderChanged,
   },
   components: {
-    //vueSlider,
+    vueSlider,
   }
 });
 
