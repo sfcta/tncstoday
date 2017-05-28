@@ -9,16 +9,21 @@ let theme = "dark";
 
 let api_server = 'http://172.30.1.135/tnc/';
 
-var mymap = L.map('sfmap').setView([37.77, -122.44], 13);
 var url = 'https://api.mapbox.com/styles/v1/mapbox/'+theme+'-v9/tiles/256/{z}/{x}/{y}?access_token={accessToken}';
 var token = 'pk.eyJ1IjoicHNyYyIsImEiOiJjaXFmc2UxanMwM3F6ZnJtMWp3MjBvZHNrIn0._Dmske9er0ounTbBmdRrRQ';
 var attribution ='<a href="http://openstreetmap.org">OpenStreetMap</a> | ' +
                  '<a href="http://mapbox.com">Mapbox</a>';
-L.tileLayer(url, {
-  attribution:attribution,
-  maxZoom: 18,
-  accessToken:token,
-}).addTo(mymap);
+
+mapboxgl.accessToken = token;
+
+var mymap = new mapboxgl.Map({
+    container: 'sfmap',
+    style: 'mapbox://styles/mapbox/dark-v9',
+    center: [-122.44, 37.77],
+    zoom: 13,
+    pitch: 70,
+    bearing: -30,
+});
 
 let segmentLayer;
 let selectedSegment, popupSegment, hoverColor, popupColor;
@@ -51,7 +56,7 @@ let losColor = {'A':'#060', 'B':'#9f0', 'C':'#ff3', 'D':'#f90', 'E':'#f60', 'F':
 
 let styles = (theme==='dark' ? dark_styles : light_styles);
 
-
+let colorStops = [[0,'#208'],[60,'#44c'],[150,'#4a4'],[350,'#ee4'],[700,'#f46'],[1200,'#c00']];
 let totalColors =       [ '#208', '#44c', '#4a4', '#ee4' , '#F46', '#c00'];
 let totalColorCutoffs = [   60.0 ,   150.0 ,   350.0 ,  700.0, 1200.0];
 
@@ -66,43 +71,108 @@ function getColor(numTrips) {
 
 let tazLayers = {};
 
+
 function addTazLayer(tazs, options={}) {
+
+  // First create on giant GeoJSON layer
+  let fulljson = {};
+  fulljson['type'] = 'FeatureCollection';
+  fulljson['features'] = [];
+
   for (let taz of tazs) {
     if (taz.taz > 981) continue;
     if (skipTazs.has(taz.taz)) continue;
 
-      let json = JSON.parse(taz.geometry);
-      json['taz'] = taz.taz;
-
-      let shade = '#222';
-
-      if (taz.taz in tripTotals) {
-        let mine = tripTotals[parseInt(taz.taz)][day];
-        shade = getColor(mine[chosenPeriod]);
+    let json = {};
+    json['type'] = 'Feature';
+    json['geometry'] = JSON.parse(taz.geometry);
+    let shade = '#222';
+    let numTrips = 0;
+    if (taz.taz in tripTotals) {
+        let trips = tripTotals[parseInt(taz.taz)][day];
+        numTrips = trips[chosenPeriod];
+        shade = getColor(numTrips);
         if (!shade) shade = '#222';
-      }
+    }
+    json['properties'] = {
+        taz: 0+taz.taz,
+        shade: shade,
+        trips: numTrips,
+    }
 
-      let layer = L.geoJSON(json, {
-        style: {
-          opacity:0.0,
-          fillColor: shade,
-          fillOpacity: 0.8,
-        },
-
-        onEachFeature: function(feature, layer) {
-          layer.on({ mouseover: hoverOnTaz,
-                   click : clickedOnTaz,
-          });
-        },
-      });
-
-      // hang onto this layer so we can do stuff to it later
-      tazLayers[parseInt(taz.taz)] = layer;
-      // this fakey sleep command just makes the TAZs pop in in sequence, for a nice effect
-      sleep(100).then(() => {
-          layer.addTo(mymap);
-      });
+    fulljson['features'].push(json);
   }
+
+  // And then add it all fancylike.
+  mymap.addSource('tfaz', {
+      type: 'geojson',
+      data: fulljson,
+  });
+
+  mymap.addLayer({
+        source: 'tfaz',
+        id: 'tfaz',
+        type: 'fill-extrusion',
+        paint: {
+            'fill-extrusion-opacity':0.75,
+            'fill-extrusion-color': {
+                property: 'trips',
+                stops: colorStops,
+            },
+            'fill-extrusion-height': {
+                property: 'trips',
+                type:'identity',
+            },
+        }
+    }
+  );
+
+/*
+  for (let taz of tazs) {
+    if (taz.taz > 981) continue;
+    if (skipTazs.has(taz.taz)) continue;
+
+    let json = JSON.parse(taz.geometry);
+    json['taz'] = taz.taz;
+
+    let shade = '#222';
+
+    if (taz.taz in tripTotals) {
+    let mine = tripTotals[parseInt(taz.taz)][day];
+    shade = getColor(mine[chosenPeriod]);
+    if (!shade) shade = '#222';
+    }
+
+    mymap.addSource(''+taz.taz, {
+      type: 'geojson',
+      data: json,
+    });
+
+    mymap.addLayer({
+        source: ''+taz.taz,
+        id: ''+taz.taz,
+        type: 'fill',
+    });
+/*
+    let layer = L.geoJSON(json, {
+    style: {
+      opacity:0.0,
+      fillColor: shade,
+      fillOpacity: 0.8,
+    },
+
+    onEachFeature: function(feature, layer) {
+      layer.on({ mouseover: hoverOnTaz,
+               click : clickedOnTaz,
+      });
+    },
+    });
+
+    // hang onto this layer so we can do stuff to it later
+    tazLayers[parseInt(taz.taz)] = layer;
+    layer.addTo(mymap);
+  }
+  */
 }
 
 function sleep (time) {
