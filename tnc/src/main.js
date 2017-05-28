@@ -71,35 +71,42 @@ function addTazLayer(tazs, options={}) {
     if (taz.taz > 981) continue;
     if (skipTazs.has(taz.taz)) continue;
 
-    let json = JSON.parse(taz.geometry);
-    json['taz'] = taz.taz;
+      let json = JSON.parse(taz.geometry);
+      json['taz'] = taz.taz;
 
-    let shade = '#222';
+      let shade = '#222';
 
-    if (taz.taz in tripTotals) {
-      let mine = tripTotals[parseInt(taz.taz)][day];
-      shade = getColor(mine[chosenPeriod]);
-      if (!shade) shade = '#222';
-    }
+      if (taz.taz in tripTotals) {
+        let mine = tripTotals[parseInt(taz.taz)][day];
+        shade = getColor(mine[chosenPeriod]);
+        if (!shade) shade = '#222';
+      }
 
-    let layer = L.geoJSON(json, {
-      style: {
-        opacity:0.0,
-        fillColor: shade,
-        fillOpacity: 0.8,
-      },
+      let layer = L.geoJSON(json, {
+        style: {
+          opacity:0.0,
+          fillColor: shade,
+          fillOpacity: 0.8,
+        },
 
-      onEachFeature: function(feature, layer) {
-        layer.on({ mouseover: hoverOnTaz,
+        onEachFeature: function(feature, layer) {
+          layer.on({ mouseover: hoverOnTaz,
                    click : clickedOnTaz,
-        });
-      },
-    });
+          });
+        },
+      });
 
-    // hang onto this layer so we can do stuff to it later
-    tazLayers[parseInt(taz.taz)] = layer;
-    layer.addTo(mymap);
+      // hang onto this layer so we can do stuff to it later
+      tazLayers[parseInt(taz.taz)] = layer;
+      // this fakey sleep command just makes the TAZs pop in in sequence, for a nice effect
+      sleep(100).then(() => {
+          layer.addTo(mymap);
+      });
   }
+}
+
+function sleep (time) {
+      return new Promise((resolve) => setTimeout(resolve, time));
 }
 
 function addSegmentLayer(segments, options={}) {
@@ -128,8 +135,6 @@ function addSegmentLayer(segments, options={}) {
 }
 
 function styleByTotalTrips(feature) {
-  console.log("BOOP:");
-  console.log(feature);
   return;
   //let avail_trips = totalTrips[
   //let shade =
@@ -194,7 +199,6 @@ function buildChartHtmlFromCmpData(json) {
 function clickedOnTaz(e) {
       let segment = e.target.feature;
 
-      console.log(segment);
       let cmp_id = segment.segnum2013;
 
       // highlight it
@@ -259,7 +263,6 @@ function fetchTripTotals() {
   var params = [];
   for (let key in fields) params.push(esc(key) + '=' + esc(fields[key]));
   let finalUrl = url + params.join('&');
-  console.log(finalUrl);
 
   // Fetch the segments
   fetch(finalUrl)
@@ -280,7 +283,6 @@ function queryServer() {
   var params = [];
   for (let key in taz_fields) params.push(esc(key) + '=' + esc(taz_fields[key]));
   let finalUrl = segmentUrl + params.join('&');
-  console.log(finalUrl);
 
   // Fetch the segments
   fetch(finalUrl)
