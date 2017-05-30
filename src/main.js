@@ -20,11 +20,11 @@ var mymap = new mapboxgl.Map({
     container: 'sfmap',
     style: 'mapbox://styles/mapbox/dark-v9',
     center: [-122.42, 37.78],
-    zoom: 13,
-    pitch: 70,
+    zoom: 12,
     bearing: -30,
-    attributionControl: false,
-    logoPosition: 'bottom-right',
+    pitch: 50,
+    attributionControl: true,
+    logoPosition: 'bottom-left',
 });
 
 let segmentLayer;
@@ -135,6 +135,9 @@ function addTazLayer(tazs, options={}) {
         }
     }
   );
+
+  mymap.addControl(new PitchToggle({bearing: -30, pitch:50, minpitchzoom:13}), 'top-left');
+  mymap.addControl(new mapboxgl.NavigationControl(), 'top-left');
 
   /*
     onEachFeature: function(feature, layer) {
@@ -379,7 +382,13 @@ function clickDay(chosenDay) {
 
 // Update all colors based on trip totals
 function updateColors() {
+  mymap.setPaintProperty('taz','fill-extrusion-height',
+    {property: 'trips',type:'identity'});
   mymap.getSource('taz').setData(jsonByDay[chosenDir][day]);
+}
+
+function flattenBuildings() {
+  mymap.setPaintProperty('taz','fill-extrusion-height',0);
 }
 
 let app = new Vue({
@@ -406,3 +415,53 @@ let app = new Vue({
 });
 
 fetchTripTotals();
+
+// ----------------------------------------------------------------------------
+// PITCH TOGGLE Button
+// See https://github.com/tobinbradley/mapbox-gl-pitch-toggle-control
+export default class PitchToggle {
+
+    constructor({bearing = -20, pitch = 50, minpitchzoom = null}) {
+        this._bearing = bearing;
+        this._pitch = pitch;
+        this._minpitchzoom = minpitchzoom;
+    }
+
+    onAdd(map) {
+        this._map = map;
+        let _this = this;
+
+        this._btn = document.createElement('button');
+        this._btn.className = 'mapboxgl-ctrl-icon mapboxgl-ctrl-pitchtoggle-2d';
+        this._btn.type = 'button';
+        this._btn['aria-label'] = 'Toggle Pitch';
+        this._btn.onclick = function() {
+            if (map.getPitch() === 0) {
+                let options = {pitch: _this._pitch, bearing: _this._bearing};
+                if (_this._minpitchzoom && map.getZoom() > _this._minpitchzoom) {
+                    options.zoom = _this._minpitchzoom;
+                }
+                map.easeTo(options);
+                _this._btn.className = 'mapboxgl-ctrl-icon mapboxgl-ctrl-pitchtoggle-2d';
+                updateColors();
+            } else {
+                map.easeTo({pitch: 0, bearing: 0});
+                _this._btn.className = 'mapboxgl-ctrl-icon mapboxgl-ctrl-pitchtoggle-3d';
+                flattenBuildings();
+            }
+        };
+
+
+        this._container = document.createElement('div');
+        this._container.className = 'mapboxgl-ctrl mapboxgl-ctrl-group';
+        this._container.appendChild(this._btn);
+
+        return this._container;
+    }
+
+    onRemove() {
+        this._container.parentNode.removeChild(this._container);
+        this._map = undefined;
+    }
+
+}
