@@ -43,21 +43,26 @@
 
       <div id="panel">
           <div class="dashboard">
-            <h3><b>TNC EXPLORER &raquo; SAN FRANCISCO COUNTY TRANSPORTATION AUTHORITY</b></h3>
+            <h3><b>TNC EXPLORER &raquo;<br/><br/>SAN FRANCISCO COUNTY TRANSPORTATION AUTHORITY</b></h3>
+            <hr/>
             <div id="picker">
-              <div class="column1">
-                <button @click="pickAM" v-bind:class="{ active: isAMactive }"
-                         class="small ui inverted red button">Available Trips</button>
-                <button @click="pickPM" v-bind:class="{ active: isPMactive }"
-                         class="small ui inverted blue button">Accepted Trips</button>
-              </div>
-              <div class="column2">
-                  <h4>Day of Week:
+                <button @click="pickPickup" v-bind:class="{ active: isPickupActive }"
+                         class="small ui inverted blue button">Pick-ups</button>
+                <button @click="pickDropoff" v-bind:class="{ active: isDropoffActive }"
+                         class="small ui inverted red button">Drop-offs</button>
+                <hr/>
+                <h5>Day of Week:</h5>
+                <button v-for="(item, index) in days"
+                        @click="clickDay(index)"
+                        class="mini ui inverted button"
+                        v-bind:class="{ active: index==day, blue: index <5, red: index >= 5 }"
+                        v-bind:class="">{{item}}
+                </button>
+                <hr/>
+                <h5>Time of Day:
                   <vue-slider v-bind="timeSlider" v-model="sliderValue"></vue-slider>
-                  </h4>
-              </div>
+                </h5>
             </div>
-            <h3 />
           </div>
       </div>
 
