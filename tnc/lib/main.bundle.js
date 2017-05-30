@@ -3371,6 +3371,12 @@ module.exports = self.fetch.bind(self);
 
 // Use npm and babel to support IE11/Safari
 
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
 __webpack_require__(114);
 
 __webpack_require__(115);
@@ -3380,6 +3386,8 @@ var _vueSliderComponent = __webpack_require__(116);
 var _vueSliderComponent2 = _interopRequireDefault(_vueSliderComponent);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
@@ -3397,9 +3405,9 @@ var mymap = new mapboxgl.Map({
   container: 'sfmap',
   style: 'mapbox://styles/mapbox/dark-v9',
   center: [-122.42, 37.78],
-  zoom: 13,
-  pitch: 70,
+  zoom: 12,
   bearing: -30,
+  pitch: 50,
   attributionControl: false,
   logoPosition: 'bottom-right'
 });
@@ -3537,6 +3545,9 @@ function addTazLayer(tazs) {
       }
     }
   });
+
+  mymap.addControl(new PitchToggle({ bearing: -30, pitch: 50, minpitchzoom: 13 }), 'top-left');
+  mymap.addControl(new mapboxgl.NavigationControl(), 'top-left');
 
   /*
     onEachFeature: function(feature, layer) {
@@ -3814,7 +3825,12 @@ function clickDay(chosenDay) {
 
 // Update all colors based on trip totals
 function updateColors() {
+  mymap.setPaintProperty('taz', 'fill-extrusion-height', { property: 'trips', type: 'identity' });
   mymap.getSource('taz').setData(jsonByDay[chosenDir][day]);
+}
+
+function flattenBuildings() {
+  mymap.setPaintProperty('taz', 'fill-extrusion-height', 0);
 }
 
 var app = new Vue({
@@ -3841,6 +3857,71 @@ var app = new Vue({
 });
 
 fetchTripTotals();
+
+// ----------------------------------------------------------------------------
+// PITCH TOGGLE Button
+// See https://github.com/tobinbradley/mapbox-gl-pitch-toggle-control
+
+var PitchToggle = function () {
+  function PitchToggle(_ref) {
+    var _ref$bearing = _ref.bearing,
+        bearing = _ref$bearing === undefined ? -20 : _ref$bearing,
+        _ref$pitch = _ref.pitch,
+        pitch = _ref$pitch === undefined ? 50 : _ref$pitch,
+        _ref$minpitchzoom = _ref.minpitchzoom,
+        minpitchzoom = _ref$minpitchzoom === undefined ? null : _ref$minpitchzoom;
+
+    _classCallCheck(this, PitchToggle);
+
+    this._bearing = bearing;
+    this._pitch = pitch;
+    this._minpitchzoom = minpitchzoom;
+  }
+
+  _createClass(PitchToggle, [{
+    key: 'onAdd',
+    value: function onAdd(map) {
+      this._map = map;
+      var _this = this;
+
+      this._btn = document.createElement('button');
+      this._btn.className = 'mapboxgl-ctrl-icon mapboxgl-ctrl-pitchtoggle-2d';
+      this._btn.type = 'button';
+      this._btn['aria-label'] = 'Toggle Pitch';
+      this._btn.onclick = function () {
+        if (map.getPitch() === 0) {
+          var options = { pitch: _this._pitch, bearing: _this._bearing };
+          if (_this._minpitchzoom && map.getZoom() > _this._minpitchzoom) {
+            options.zoom = _this._minpitchzoom;
+          }
+          map.easeTo(options);
+          _this._btn.className = 'mapboxgl-ctrl-icon mapboxgl-ctrl-pitchtoggle-2d';
+          updateColors();
+        } else {
+          map.easeTo({ pitch: 0, bearing: 0 });
+          _this._btn.className = 'mapboxgl-ctrl-icon mapboxgl-ctrl-pitchtoggle-3d';
+          flattenBuildings();
+        }
+      };
+
+      this._container = document.createElement('div');
+      this._container.className = 'mapboxgl-ctrl mapboxgl-ctrl-group';
+      this._container.appendChild(this._btn);
+
+      return this._container;
+    }
+  }, {
+    key: 'onRemove',
+    value: function onRemove() {
+      this._container.parentNode.removeChild(this._container);
+      this._map = undefined;
+    }
+  }]);
+
+  return PitchToggle;
+}();
+
+exports.default = PitchToggle;
 
 /***/ }),
 /* 118 */
