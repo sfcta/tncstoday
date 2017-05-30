@@ -19,10 +19,12 @@ mapboxgl.accessToken = token;
 var mymap = new mapboxgl.Map({
     container: 'sfmap',
     style: 'mapbox://styles/mapbox/dark-v9',
-    center: [-122.44, 37.77],
+    center: [-122.42, 37.78],
     zoom: 13,
     pitch: 70,
     bearing: -30,
+    attributionControl: false,
+    logoPosition: 'bottom-right',
 });
 
 let segmentLayer;
@@ -33,32 +35,31 @@ let tripTotals = {};
 
 let day = 0;
 
-let chosenPeriod = 'avail_trips';
+let chosenDir = 'accpt_trips';
+let jsonByDay = {'avail_trips':{}, 'accpt_trips':{} };
 
 var taz_fields = {
   select: 'taz,geometry',
 };
 
-// no ubers on the farallon islands
+// no ubers on the farallon islands (at least, not yet)
 let skipTazs = new Set([384, 385, 313, 305 ]);
 
 let dark_styles = { normal  : {fillOpacity: 0.8, opacity: 0.0},
                     selected: {fillOpacity: 0.4, color: "#fff", opacity: 1.0},
                     popup   : {color: "#fff",    weight:5, opacity: 1.0, fillOpacity: 0.8},
 };
-
 let light_styles = {normal  : {"color": "#3c6", "weight": 4, "opacity": 1.0 },
                     selected: {"color": "#39f", "weight": 10, "opacity": 1.0 },
                     popup   : {"color": "#33f", "weight": 10, "opacity": 1.0 }
 };
-
-let losColor = {'A':'#060', 'B':'#9f0', 'C':'#ff3', 'D':'#f90', 'E':'#f60', 'F':'#c00'};
-
 let styles = (theme==='dark' ? dark_styles : light_styles);
 
 let colorStops = [[0,'#208'],[60,'#44c'],[150,'#4a4'],[350,'#ee4'],[700,'#f46'],[1200,'#c00']];
 let totalColors =       [ '#208', '#44c', '#4a4', '#ee4' , '#F46', '#c00'];
 let totalColorCutoffs = [   60.0 ,   150.0 ,   350.0 ,  700.0, 1200.0];
+
+let tazLayers = {};
 
 function getColor(numTrips) {
   let i;
@@ -69,49 +70,57 @@ function getColor(numTrips) {
 }
 
 
-let tazLayers = {};
+// First create one giant GeoJSON layer. This should really be done in PostGIS, but I'm rushing.
+// See http://www.postgresonline.com/journal/archives/267-Creating-GeoJSON-Feature-Collections-with-JSON-and-PostGIS-functions.html
+function buildTazDataFromJson(tazs, options) {
+  // loop for the two directions
+  for (let direction in jsonByDay) {
+    // loop for each day of week
+    for (let d=0; d<7; d++) {
+      let fulljson = {};
+      fulljson['type'] = 'FeatureCollection';
+      fulljson['features'] = [];
 
+      for (let taz of tazs) {
+        if (taz.taz > 981) continue;
+        if (skipTazs.has(taz.taz)) continue;
+
+        let json = {};
+        json['type'] = 'Feature';
+        json['geometry'] = JSON.parse(taz.geometry);
+        let shade = '#222';
+        let numTrips = 0;
+        if (taz.taz in tripTotals) {
+            let trips = tripTotals[parseInt(taz.taz)][d];
+            numTrips = trips[direction];
+            shade = getColor(numTrips);
+            if (!shade) shade = '#222';
+        }
+        json['properties'] = {
+            taz: 0+taz.taz,
+            shade: shade,
+            trips: numTrips,
+        }
+        fulljson['features'].push(json);
+      }
+      jsonByDay[direction][d] = fulljson;
+    }
+  }
+  return jsonByDay;
+}
 
 function addTazLayer(tazs, options={}) {
-
-  // First create on giant GeoJSON layer
-  let fulljson = {};
-  fulljson['type'] = 'FeatureCollection';
-  fulljson['features'] = [];
-
-  for (let taz of tazs) {
-    if (taz.taz > 981) continue;
-    if (skipTazs.has(taz.taz)) continue;
-
-    let json = {};
-    json['type'] = 'Feature';
-    json['geometry'] = JSON.parse(taz.geometry);
-    let shade = '#222';
-    let numTrips = 0;
-    if (taz.taz in tripTotals) {
-        let trips = tripTotals[parseInt(taz.taz)][day];
-        numTrips = trips[chosenPeriod];
-        shade = getColor(numTrips);
-        if (!shade) shade = '#222';
-    }
-    json['properties'] = {
-        taz: 0+taz.taz,
-        shade: shade,
-        trips: numTrips,
-    }
-
-    fulljson['features'].push(json);
-  }
+  buildTazDataFromJson(tazs);
 
   // And then add it all fancylike.
-  mymap.addSource('tfaz', {
+  mymap.addSource('taz', {
       type: 'geojson',
-      data: fulljson,
+      data: jsonByDay[chosenDir][day],
   });
 
   mymap.addLayer({
-        source: 'tfaz',
-        id: 'tfaz',
+        source: 'taz',
+        id: 'taz',
         type: 'fill-extrusion',
         paint: {
             'fill-extrusion-opacity':0.75,
@@ -127,40 +136,7 @@ function addTazLayer(tazs, options={}) {
     }
   );
 
-/*
-  for (let taz of tazs) {
-    if (taz.taz > 981) continue;
-    if (skipTazs.has(taz.taz)) continue;
-
-    let json = JSON.parse(taz.geometry);
-    json['taz'] = taz.taz;
-
-    let shade = '#222';
-
-    if (taz.taz in tripTotals) {
-    let mine = tripTotals[parseInt(taz.taz)][day];
-    shade = getColor(mine[chosenPeriod]);
-    if (!shade) shade = '#222';
-    }
-
-    mymap.addSource(''+taz.taz, {
-      type: 'geojson',
-      data: json,
-    });
-
-    mymap.addLayer({
-        source: ''+taz.taz,
-        id: ''+taz.taz,
-        type: 'fill',
-    });
-/*
-    let layer = L.geoJSON(json, {
-    style: {
-      opacity:0.0,
-      fillColor: shade,
-      fillOpacity: 0.8,
-    },
-
+  /*
     onEachFeature: function(feature, layer) {
       layer.on({ mouseover: hoverOnTaz,
                click : clickedOnTaz,
@@ -175,34 +151,6 @@ function addTazLayer(tazs, options={}) {
   */
 }
 
-function sleep (time) {
-      return new Promise((resolve) => setTimeout(resolve, time));
-}
-
-function addSegmentLayer(segments, options={}) {
-  return;
-  // TODO: figure out why PostGIS geojson isn't in exactly the right format.
-  for (let segment of segments) {
-    segment["type"] = "Feature";
-    segment["geometry"] = JSON.parse(segment.geometry);
-  }
-
-  segmentLayer = L.geoJSON(segments, {
-    style: {color: 'red'},
-    onEachFeature: function(feature, layer) {
-      layer.on({ mouseover: hoverOnSegment,
-                 click : clickedOnSegment,
-      });
-    },
-  });
-
-  if (mymap.segmentLayer) {
-    selectedSegment = popupSegment = hoverColor = popupColor = null;
-    mymap.removeLayer(segmentLayer);
-    segmentLayer = null;
-  }
-  segmentLayer.addTo(mymap);
-}
 
 function styleByTotalTrips(feature) {
   return;
@@ -370,76 +318,39 @@ function queryServer() {
 let segmentLos = {};
 
 
-function colorByLOS(personJson, year) {
+function pickPickup(thing) {
+  app.isPickupActive = true;
+  app.isDropoffActive = false;
 
-  // Don't re-fetch if we already have the color data
-  if (year in speedCache) {
-    segmentLos = speedCache[year];
-    segmentLayer.clearLayers();
-    addSegmentLayer(personJson);
-    return;
-  }
-
-  let options = {
-    year: 'eq.'+ year,
-    period: 'eq.' + chosenPeriod,
-    select: 'cmp_id,name_HCM1985,from,to,dir,avg_speed,year,period,los_HCM1985',
-  };
-  const speedUrl = api_server + 'auto_speeds?';
-  var params = [];
-  for (let key in options) params.push(esc(key) + '=' + esc(options[key]));
-  let finalUrl = speedUrl + params.join('&');
-
-  fetch(finalUrl).then((resp) => resp.json()).then(function(data) {
-    let losData = {};
-    for (let segment in data) {
-      let thing = data[segment];
-      losData[thing.cmp_id] = thing.los_HCM1985;
-    }
-    // save it for later
-    speedCache[year] = losData;
-    segmentLos = losData;
-
-    // add it to the map
-    if (segmentLayer) segmentLayer.clearLayers();
-    addSegmentLayer(personJson);
-  }).catch(function(error) {
-    console.log(error);
-  });
-
-}
-
-function pickAM(thing) {
-  app.isAMactive = true;
-  app.isPMactive = false;
-  chosenPeriod = 'avail_trips';
+  chosenDir = 'accpt_trips';
   updateColors();
 }
 
-function pickPM(thing) {
-  app.isAMactive = false;
-  app.isPMactive = true;
-  chosenPeriod = 'accpt_trips';
+function pickDropoff(thing) {
+  app.isPickupActive = false;
+  app.isDropoffActive = true;
+
+  chosenDir = 'avail_trips';
   updateColors();
 }
 
 // SLIDER ----
 let timeSlider = {
-          data: [ "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun", ],
+          data: [[...Array(24).keys()]],
+					disabled: true,
           sliderValue: "Mon",
 					width: 'auto',
 					height: 6,
 					direction: 'horizontal',
 					dotSize: 16,
 					eventType: 'auto',
-					disabled: false,
 					show: true,
 					realTime: false,
 					tooltip: 'always',
 					clickable: true,
 					tooltipDir: 'bottom',
-					piecewise: true,
-          piecewiseLabel: true,
+					piecewise: false,
+          piecewiseLabel: false,
 					lazy: false,
 					reverse: false,
           labelActiveStyle: {  "color": "#fff"},
@@ -453,39 +364,38 @@ let timeSlider = {
 // ------
 
 function sliderChanged(thing) {
+  return;
   let newDay = timeSlider.data.indexOf(thing);
   day = parseInt(newDay);
 
   updateColors();
 }
 
+function clickDay(chosenDay) {
+  day = parseInt(chosenDay);
+  app.day = day;
+  updateColors();
+}
+
 // Update all colors based on trip totals
 function updateColors() {
-  for (let taz in tazLayers) {
-    let shade = '#222';
-    let layer = tazLayers[taz];
-
-    let tazData = tripTotals[parseInt(taz)];
-    if (tazData) {
-      let dayData = tazData[day];
-      shade = getColor(dayData[chosenPeriod]);
-      if (!shade) shade = '#222';
-    }
-    layer.setStyle({fillColor: shade});
-  }
+  mymap.getSource('taz').setData(jsonByDay[chosenDir][day]);
 }
 
 let app = new Vue({
   el: '#panel',
   data: {
-    isAMactive: true,
-    isPMactive: false,
+    isPickupActive: true,
+    isDropoffActive: false,
     sliderValue: 2015,
     timeSlider: timeSlider,
+    day: 0,
+    days: ['Mo','Tu','We','Th','Fr','Saturday','Sunday'],
   },
   methods: {
-    pickAM: pickAM,
-    pickPM: pickPM,
+    pickPickup: pickPickup,
+    pickDropoff: pickDropoff,
+    clickDay: clickDay,
   },
   watch: {
     sliderValue: sliderChanged,
