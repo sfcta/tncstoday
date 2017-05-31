@@ -22,7 +22,7 @@ mapboxgl.accessToken = "pk.eyJ1IjoicHNyYyIsImEiOiJjaXFmc2UxanMwM3F6ZnJtMWp3MjBvZ
 
 let mymap = new mapboxgl.Map({
     container: 'sfmap',
-    style: 'mapbox://styles/mapbox/dark-v9',
+    style: 'mapbox://styles/mapbox/light-v9',
     center: [-122.43, 37.78],
     zoom: 12,
     bearing: -30,
@@ -33,16 +33,43 @@ let mymap = new mapboxgl.Map({
 
 // no ubers on the farallon islands (at least, not yet)
 let skipTazs = new Set([384, 385, 313, 305 ]);
+let weekdays = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
 
-let dark_styles = { normal  : {fillOpacity: 0.8, opacity: 0.0},
-                    selected: {fillOpacity: 0.4, color: "#fff", opacity: 1.0},
-                    popup   : {color: "#fff",    weight:5, opacity: 1.0, fillOpacity: 0.8},
-};
-let styles = dark_styles; // (theme==='dark' ? dark_styles : darklight_styles);
+let colorRamp1 = [
+       [10,'#FBFCBD'],
+       [20, '#FCE3A7'],
+       [30, '#FFCD8F'],
+       [40, '#FFB57D'],
+       [50,'#FF9C6B'],
+       [75,'#FA815F'],
+       [100, '#F5695F'],
+       [125, '#E85462'],
+       [150, '#D6456B'],
+       [175, '#C23C76'],
+       [200, '#AB337D'],
+       [225, '#942B7F'],
+       [250, '#802482'],
+       [300, '#6A1C80'],
+       [350, '#55157D'],
+       [400, '#401073'],
+       [500, '#291057'],
+       [750, '#160D38'],
+       [1000, '#0A081F'],
+       [1800, '#000005'],
+];
 
-let colorStops = [[0,'#208'],[60,'#44c'],[150,'#4a4'],[350,'#ee4'],[700,'#f46'],[1200,'#c00']];
-let totalColors =       [ '#208', '#44c', '#4a4', '#ee4' , '#F46', '#c00'];
-let totalColorCutoffs = [   60.0 ,   150.0 ,   350.0 ,  700.0, 1200.0];
+let colorRamp2=[];
+for (let zz=2; zz<colorRamp1.length;zz++) {
+  colorRamp2[zz-2] = [colorRamp1[zz][0], colorRamp1[colorRamp1.length-zz-1][1]];
+}
+
+let colorRamp3 = [[0,'#208'],[60,'#44c'],[150,'#4a4'],[350,'#ee4'],[700,'#f46'],[1200,'#c00']];
+
+let taColorRamp = colorRamp1;
+
+// totals by day of week
+let totalPickups =  [0,0,0,0,0,0,0];
+let totalDropoffs = [0,0,0,0,0,0,0];
 
 // ----------------------------------------------------------------------------
 // PITCH TOGGLE Button
@@ -91,10 +118,10 @@ export default class PitchToggle {
 
 function getColor(numTrips) {
   let i;
-  for (i=0; i< totalColorCutoffs.length; i++) {
-    if (numTrips < totalColorCutoffs[i]) return totalColors[i];
+  for (i=0; i< taColorRamp.length; i++) {
+    if (numTrips < taColorRamp[i][0]) return taColorRamp[i][1];
   }
-  return totalColors[i]
+  return taColorRamp[i-1][1];
 }
 
 // Create one giant GeoJSON layer. This should really be done in PostGIS, but I'm rushing.
@@ -139,20 +166,23 @@ function buildTazDataFromJson(tazs, options) {
 function addTazLayer(tazs, options={}) {
   buildTazDataFromJson(tazs);
 
-  mymap.addSource('taz', {
+  if (mymap.getLayer('taz')) mymap.removeLayer('taz');
+  if (mymap.getSource('taz-source')) mymap.removeSource('taz-source');
+
+  mymap.addSource('taz-source', {
       type: 'geojson',
       data: jsonByDay[chosenDir][day],
   });
 
   mymap.addLayer({
-        source: 'taz',
+        source: 'taz-source',
         id: 'taz',
         type: 'fill-extrusion',
         paint: {
-            'fill-extrusion-opacity':0.6,
+            'fill-extrusion-opacity':0.8,
             'fill-extrusion-color': {
                 property: 'trips',
-                stops: colorStops,
+                stops: taColorRamp,
             },
             'fill-extrusion-height': {
                 property: 'trips',
@@ -172,13 +202,19 @@ function addTazLayer(tazs, options={}) {
   });
 
   mymap.on("click", "taz", function(e) {
+    console.log(e);
     clickedOnTaz(e);
   });
 
   // Add nav controls
-  mymap.addControl(new PitchToggle({bearing: -30, pitch:50, minpitchzoom:14}), 'top-left');
-  mymap.addControl(new mapboxgl.NavigationControl(), 'top-left');
+  if (first) {
+    mymap.addControl(new PitchToggle({bearing: -30, pitch:50, minpitchzoom:14}), 'top-left');
+    mymap.addControl(new mapboxgl.NavigationControl(), 'top-left');
+    first = false;
+  }
 }
+
+let first = true;
 
 function buildChartDataFromJson(json) {
   let data = [];
@@ -244,13 +280,14 @@ function updateChart() {
   });
 }
 
+let popup = null;
+
 function clickedOnTaz(e) {
   chosenTaz = e.features[0].properties.taz;
   let taz = chosenTaz;
   let trips = Math.round(tripTotals[taz][day][chosenDir]);
   if (trips) {
     currentTotal = trips;
-    app.details = ''+ trips + ' Daily trips';
   } else {
     return;
   }
@@ -273,7 +310,9 @@ function clickedOnTaz(e) {
                       "<hr/>" +
                       "<div id=\"chart\" style=\"width: 300px; height:250px;\"></div>";
 
-      let popup = new mapboxgl.Popup({closeOnClick: true})
+      if (popup) { popup.remove(); popup=null}
+
+      popup = new mapboxgl.Popup({closeOnClick: true})
         .setLngLat(e.lngLat)
         .setHTML(popupText)
         .addTo(mymap);
@@ -293,7 +332,13 @@ function calculateTripTotals(jsonData) {
     let taz = 0+record.taz;
     if (!(taz in totals)) totals[taz] = {};
     totals[taz][record.day_of_week] = record;
+
+    // big sum total, too
+    totalPickups[record.day_of_week] += record.accpt_trips;
+    totalDropoffs[record.day_of_week] += record.avail_trips;
   }
+
+  displayDetails();  // display daily total now that we have it
   return totals;
 }
 
@@ -323,6 +368,7 @@ function queryServer() {
   fetch(finalUrl)
     .then((resp) => resp.json()).then(function(jsonData) {
       addTazLayer(jsonData);
+      //fetchDailyDetails();
     })
     .catch(function(error) {
       console.log("err: "+error);
@@ -332,16 +378,18 @@ function queryServer() {
 function pickPickup(thing) {
   app.isPickupActive = true;
   app.isDropoffActive = false;
-
   chosenDir = 'accpt_trips';
+
+  displayDetails();
   updateColors();
 }
 
 function pickDropoff(thing) {
   app.isPickupActive = false;
   app.isDropoffActive = true;
-
   chosenDir = 'avail_trips';
+
+  displayDetails();
   updateColors();
 }
 
@@ -380,9 +428,19 @@ function sliderChanged(thing) {
   updateColors();
 }
 
+function displayDetails() {
+  let trips = Math.round(app.isPickupActive ? totalPickups[day] : totalDropoffs[day]);
+  let direction = (app.isPickupActive ? 'pickups' : 'dropoffs');
+
+  app.details1 = weekdays[day] + ':';
+  app.details2 = trips.toLocaleString() + " citywide " + direction;
+}
+
 function clickDay(chosenDay) {
   day = parseInt(chosenDay);
   app.day = day;
+
+  displayDetails();
   updateColors();
   updateChart();
 }
@@ -391,12 +449,69 @@ function clickDay(chosenDay) {
 function updateColors() {
   mymap.setPaintProperty('taz','fill-extrusion-height',
     {property: 'trips',type:'identity'});
-  mymap.getSource('taz').setData(jsonByDay[chosenDir][day]);
+  if (mymap.getSource('taz-source')) mymap.getSource('taz-source').setData(jsonByDay[chosenDir][day]);
 }
 
 function flattenBuildings() {
   mymap.setPaintProperty('taz','fill-extrusion-height',0);
 }
+
+// dailyTotal[day][time][pickup/dropoff]
+let dailyTotals = {};
+
+function fetchDailyDetails() {
+
+  const url = api_server + 'tnc_trip_stats?select=taz,day_of_week,time,avail_trips,accpt_trips';
+  fetch(url).then((resp) => resp.json()).then(function(json) {
+
+    console.log(json);
+    for (let record of json) {
+      let taz = record.taz;
+      let pickup = record.accpt_trips;
+      let dropoff = record.avail_trips;
+      let day = record.day_of_week;
+      let time = 0+record.time.substring(0,2);
+      if (!dailyTotals[day][time]) {
+        dailyTotals[day][time]['avail_trips'] = 0;
+        dailyTotals[day][time]['accpt_trips'] = 0;
+      }
+
+      dailyTotals[day][time]['avail_trips'] += record.dropoff;
+      dailyTotals[day][time]['accpt_trips'] += record.pickup;
+    }
+    console.log(dailyTotals);
+
+  }).catch(function(error) {
+    console.log("err: "+error);
+  });
+}
+
+function pickTheme(theme) {
+  if (mymap.getLayer('taz')) mymap.removeLayer('taz');
+  if (mymap.getSource('taz-source')) mymap.removeSource('taz-source');
+  if (popup) popup.remove();
+
+    // delete old chart
+  let chart = document.getElementById("chart");
+  if (chart) {
+    chart.parentNode.removeChild(chart);
+    currentChart = null;
+  }
+
+  if (theme==1) {
+    taColorRamp = colorRamp1;
+    mymap.setStyle('mapbox://styles/mapbox/light-v9');
+  } else if (theme==2) {
+    taColorRamp = colorRamp2;
+    mymap.setStyle('mapbox://styles/mapbox/dark-v9');
+  } else {
+    taColorRamp = colorRamp3;
+    mymap.setStyle('mapbox://styles/mapbox/dark-v9');
+  }
+
+  queryServer();
+}
+
 
 let app = new Vue({
   el: '#panel',
@@ -406,13 +521,15 @@ let app = new Vue({
     sliderValue: 2015,
     timeSlider: timeSlider,
     day: 0,
-    days: ['Mo','Tu','We','Th','Fr','Saturday','Sunday'],
-    details: "",
+    days: ['Mo','Tu','We','Th','Fr','Sa','Su'],
+    details1: '',
+    details2: '',
   },
   methods: {
     pickPickup: pickPickup,
     pickDropoff: pickDropoff,
     clickDay: clickDay,
+    pickTheme: pickTheme,
   },
   watch: {
     sliderValue: sliderChanged,

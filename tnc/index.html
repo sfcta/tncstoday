@@ -41,32 +41,48 @@
       <div id="panel">
           <div class="dashboard">
             <h3><b>TNC EXPLORER &raquo;<br/><br/>SAN FRANCISCO COUNTY TRANSPORTATION AUTHORITY</b></h3>
+            <br/>
             <hr/>
             <div id="picker">
+                <h5>CHOOSE DIRECTION AND DAY OF WEEK:</h5>
                 <button @click="pickPickup" v-bind:class="{ active: isPickupActive }"
-                         class="small ui inverted blue button">Pick-ups</button>
+                         class="mini ui inverted blue button">Pick-ups</button>
                 <button @click="pickDropoff" v-bind:class="{ active: isDropoffActive }"
-                         class="small ui inverted red button">Drop-offs</button>
-                <hr/>
-                <h5>Day of Week:</h5>
+                         class="mini ui inverted red button">Drop-offs</button>
+                <br/>
+                <br/>
                 <button v-for="(item, index) in days"
                         @click="clickDay(index)"
                         class="mini ui inverted button"
                         v-bind:class="{ active: index==day, blue: index <5, red: index >= 5 }"
                         v-bind:class="">{{item}}
                 </button>
-                <hr/>
-                <h5>Time of Day:
-                  <vue-slider v-bind="timeSlider" v-model="sliderValue"></vue-slider>
+                  <div id="sliderpanel">
+                    <button class="mini ui inverted active red button">All Day</button>
+
+                    <vue-slider v-bind="timeSlider" v-model="sliderValue"></vue-slider>
+                  </div>
                 </h5>
 
                 <br/>
-                <hr/>
+                <br/>
+                <br/>
+                <div id="stats-panel">
+                  <hr/>
+                  <h5>CITYWIDE STATISTICS:</h5>
 
-                <h1>{{details}}</h1>
+                  <h1>{{details1}}<br/>
+                      {{details2}}</h1>
+                </div>
 
             </div>
           </div>
+          <div id="color-panel">
+            <img class="boop" src="/light.jpg" width="50" @click="pickTheme(1)" title="Pick a color theme!"></img>
+            <img class="boop" src="/dark.jpg" width="50" @click="pickTheme(2)"></img>
+            <img class="boop" src="/neon.jpg" width="50" @click="pickTheme(3)"></img>
+          </div>
+
 
       </div>
 
@@ -76,6 +92,5 @@
     </div>
 
     <script type="application/javascript" src="lib/main.bundle.js"></script>
-    <!--<script type="application/javascript" src="src/main.js"></script>-->
   </body>
 </html>

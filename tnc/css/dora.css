@@ -7,35 +7,49 @@ html,body, { width:100%; height:100%; margin:0;
 p {color:#ccc;}
 
 h1,h3,h4,h5 {color: white; }
-h3 {padding-top:5px;}
 h2 {margin-top:4px;}
+h3 {padding-top:5px;}
+h5 {margin-top:0px;}
 
 #container { position: relative; width:100%; height:100%; background-color:#888;}
 
 #panel {
+  display: flex;
+  flex-flow: column;
   position:absolute;
-  width:300px;
+  width:400px;
   height:100%;
   top: 0;
   right: 0;
-  padding:0px 10px 10px 10px;
+  padding:0px 10px 0px 10px;
   z-index:10;
   background-color:#444;
   float: right;
 }
 
-#sfmap {
-  margin-right: 300px;
-  height:100%;
-}
-
-.dashboard { padding:10px;}
-
 #panel label {
   color:white;
 }
 
+.boop { margin: 6px; cursor:pointer; border-style:solid; border-width:2px; border-color: #fff;}
+
+#sfmap {
+  margin-right: 400px;
+  height:100%;
+}
+
+.dashboard {
+  padding:10px;
+  flex: 1;
+  overflow: auto;
+}
+
+#color-panel {
+  text-align:center;
+}
+
 #sliderpanel {
+  display:none;
   margin-left:200px;
   width:300px;
 }
