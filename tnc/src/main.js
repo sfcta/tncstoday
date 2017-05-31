@@ -25,10 +25,10 @@ mapboxgl.accessToken = token;
 var mymap = new mapboxgl.Map({
     container: 'sfmap',
     style: 'mapbox://styles/mapbox/dark-v9',
-    center: [-122.42, 37.78],
+    center: [-122.43, 37.78],
     zoom: 12,
-    bearing: -30,
-    pitch: 50,
+    bearing: 0,
+    pitch: 0,
     attributionControl: true,
     logoPosition: 'bottom-left',
 });
@@ -143,7 +143,6 @@ function buildTazDataFromJson(tazs, options) {
 function addTazLayer(tazs, options={}) {
   buildTazDataFromJson(tazs);
 
-  // And then add it all fancylike.
   mymap.addSource('taz', {
       type: 'geojson',
       data: jsonByDay[chosenDir][day],
@@ -175,22 +174,13 @@ function addTazLayer(tazs, options={}) {
   });
 
   mymap.on("click", "taz", function(e) {
-    tazOfInterest = e.features[0].properties.taz;
-    console.log(tazOfInterest);
-    showTazStats(tazOfInterest);
+    clickedOnTaz(e);
   });
 
 
   // Add nav controls
-  mymap.addControl(new PitchToggle({bearing: -30, pitch:50, minpitchzoom:13}), 'top-left');
+  mymap.addControl(new PitchToggle({bearing: -30, pitch:50, minpitchzoom:14}), 'top-left');
   mymap.addControl(new mapboxgl.NavigationControl(), 'top-left');
-}
-
-function showTazStats(taz) {
-  let z = jsonByDay[chosenDir][day];
-  console.log(z);
-
-  app.details = ''+ z[taz][trips] + ' daily trips';
 }
 
 function styleByTotalTrips(feature) {
@@ -202,18 +192,15 @@ function styleByTotalTrips(feature) {
 }
 
 function buildChartHtmlFromCmpData(json) {
-  let byYear = {}
+
   let data = [];
 
-  for (let entry of json) {
-    let speed = Number(entry.avg_speed).toFixed(1);
-    if (speed === 'NaN') continue;
-    if (!byYear[entry.year]) byYear[entry.year] = {};
-    byYear[entry.year][entry.period] = speed;
-  }
+  for (let h=0; h<24; h++) {
+    let hour = json[h];
+    let picks = Number(hour.accpt_trips);
+    let drops = Number(hour.avail_trips);
 
-  for (let year in byYear) {
-    data.push({year:year, am: byYear[year]['AM'], pm: byYear[year]['PM']});
+    data.push({hour:h, pickups:picks, dropoffs:drops});
   }
 
   new Morris.Line({
@@ -223,60 +210,68 @@ function buildChartHtmlFromCmpData(json) {
     // the chart.
     data: data,
     // The name of the data record attribute that contains x-values.
-    xkey: 'year',
+    xkey: 'hour',
     // A list of names of data record attributes that contain y-values.
-    ykeys: ['am', 'pm'],
+    ykeys: ['pickups', 'dropoffs'],
     // Labels for the ykeys -- will be displayed when you hover over the
     // chart.
-    labels: ['AM', 'PM'],
-    lineColors: ["#f66","#44f"],
-    xLabels: "year",
+    labels: ['Pickups', 'Dropoffs'],
+    lineColors: ["#44f","#f66"],
+    xLabels: "Hour",
     xLabelAngle: 45,
+    xLabelFormat: dateFmt,
+    //hideHover: 'true',
+    parseTime: false,
   });
 }
 
+
+function dateFmt(x) {
+  const hourLabels = ['12 AM','1 AM','2 AM','3 AM',
+                  '4 AM','5 AM','6 AM','7 AM',
+                  '8 AM','9 AM','10 AM','11 AM',
+                  'Noon','1 PM','2 PM','3 PM',
+                  '4 PM','5 PM','6 PM','7 PM',
+                  '8 PM','9 PM','10 PM','11 PM'];
+  return hourLabels[x.x];
+}
+
 function clickedOnTaz(e) {
-      let segment = e.target.feature;
+  console.log(e);
+  tazOfInterest = e.features[0].properties.taz;
+  let taz = tazOfInterest;
 
-      let cmp_id = segment.segnum2013;
+  let trips = Math.round(tripTotals[taz][day][chosenDir]);
+  if (trips) {
+    app.details = ''+trips + ' Daily trips';
+  } else {
+    return;
+  }
 
-      // highlight it
-      if (popupSegment) {
-        let cmp_id = popupSegment.feature.segnum2013;
-        let color = losColor[segmentLos[cmp_id]];
-        popupSegment.setStyle({color:color, weight:4, opacity:1.0});
-      }
-      e.target.setStyle(styles.popup);
-      popupSegment = e.target;
+  //TODO highlight it
 
-      // delete old chart
-      let chart = document.getElementById("chart");
-      if (chart) chart.parentNode.removeChild(chart);
+  // delete old chart
+  let chart = document.getElementById("chart");
+  if (chart) chart.parentNode.removeChild(chart);
 
-      // fetch the CMP details
-      let finalUrl = api_server + 'auto_speeds?cmp_id=eq.' + cmp_id;
-      fetch(finalUrl).then((resp) => resp.json()).then(function(jsonData) {
-          let popupText = "<b>"+segment.cmp_name+" "+segment.cmp_dir+"-bound</b><br/>" +
-                          segment.cmp_from + " to " + segment.cmp_to +
-                          "<hr/>" +
-                          "<div id=\"chart\" style=\"width: 300px; height:250px;\"></div>";
+  // fetch the CMP details
+  let finalUrl = api_server + 'tnc_trip_stats?taz=eq.' + taz
+                            + '&day_of_week=eq.' + day
+  fetch(finalUrl).then((resp) => resp.json()).then(function(jsonData) {
+      console.log(jsonData);
+      let popupText = "<h2>"+trips+" Daily trips</h2>" +
+                      "<hr/>" +
+                      "<div id=\"chart\" style=\"width: 300px; height:250px;\"></div>";
 
-          let popup = L.popup()
-              .setLatLng(e.latlng)
-              .setContent(popupText)
-              .openOn(mymap);
+      let popup = new mapboxgl.Popup({closeOnClick: true})
+        .setLngLat(e.lngLat)
+        .setHTML(popupText)
+        .addTo(mymap);
 
-          popup.on("remove", function(e) {
-            let cmp_id = popupSegment.feature.segnum2013;
-            let color = losColor[segmentLos[cmp_id]];
-            popupSegment.setStyle({color:color, weight:4, opacity:1.0});
-            popupSegment = null;
-          });
-
-          let chartHtml = buildChartHtmlFromCmpData(jsonData);
-      }).catch(function(error) {
-          console.log("err: "+error);
-      });
+      let chartHtml = buildChartHtmlFromCmpData(jsonData);
+  }).catch(function(error) {
+      console.log("err: "+error);
+  });
 }
 
 let esc = encodeURIComponent;
@@ -292,17 +287,9 @@ function calculateTripTotals(jsonData) {
 }
 
 function fetchTripTotals() {
-  const url = api_server + 'taz_total?';
+  const url = api_server + 'taz_total';
 
-  var fields = {}; //day_of_week: 'eq.4',};
-
-  // convert option list into a url parameter string
-  var params = [];
-  for (let key in fields) params.push(esc(key) + '=' + esc(fields[key]));
-  let finalUrl = url + params.join('&');
-
-  // Fetch the segments
-  fetch(finalUrl)
+  fetch(url)
     .then((resp) => resp.json())
     .then(function(jsonData) {
       tripTotals = calculateTripTotals(jsonData);
@@ -335,7 +322,6 @@ function queryServer() {
 }
 
 let segmentLos = {};
-
 
 function pickPickup(thing) {
   app.isPickupActive = true;
@@ -415,7 +401,7 @@ let app = new Vue({
     timeSlider: timeSlider,
     day: 0,
     days: ['Mo','Tu','We','Th','Fr','Saturday','Sunday'],
-    details: "Click on a neighborhood for details.",
+    details: "",
   },
   methods: {
     pickPickup: pickPickup,
