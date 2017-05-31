@@ -11,6 +11,8 @@
     <!-- LEAFLET -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.3/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.0.3/dist/leaflet.js"></script>
+
+    <!-- VUE -->
     <script src="https://unpkg.com/vue"></script>
 
     <!-- MAPBOX GL -->
@@ -24,11 +26,6 @@
       integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
       crossorigin="anonymous"></script>
     <script src="semantic/semantic.min.js"></script>
-
-    <!-- IONICONS -->
-    <link rel="stylesheet" href="css/ionicons.min.css">
-    <link rel="stylesheet" href="css/leaflet.awesome-markers.css">
-    <script src="src/leaflet.awesome-markers.min.js"></script>
 
     <!-- MORRIS CHARTS -->
     <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/morris.js/0.5.1/morris.css">
@@ -62,8 +59,15 @@
                 <h5>Time of Day:
                   <vue-slider v-bind="timeSlider" v-model="sliderValue"></vue-slider>
                 </h5>
+
+                <br/>
+                <hr/>
+
+                <h1>{{details}}</h1>
+
             </div>
           </div>
+
       </div>
 
       <div id="sfmap">
