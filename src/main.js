@@ -14,9 +14,11 @@ let tripTotals = {};
 let day = 0;
 let chosenDir = 'accpt_trips';
 let jsonByDay = {'avail_trips':{}, 'accpt_trips':{} };
-let tazOfInterest = 0;
+let chosenTaz = 0;
+let currentChart = null;
+let currentTotal = 0;
 
-let mapboxgl.accessToken = 'pk.eyJ1IjoicHNyYyIsImEiOiJjaXFmc2UxanMwM3F6ZnJtMWp3MjBvZHNrIn0._Dmske9er0ounTbBmdRrRQ';
+mapboxgl.accessToken = "pk.eyJ1IjoicHNyYyIsImEiOiJjaXFmc2UxanMwM3F6ZnJtMWp3MjBvZHNrIn0._Dmske9er0ounTbBmdRrRQ";
 
 let mymap = new mapboxgl.Map({
     container: 'sfmap',
@@ -161,7 +163,6 @@ function addTazLayer(tazs, options={}) {
   );
 
   mymap.on("mousemove", "taz", function(e) {
-    tazOfInterest = e.features[0].properties.taz;
   });
 
   mymap.on("mouseleave", "taz", function() {
@@ -176,8 +177,7 @@ function addTazLayer(tazs, options={}) {
   mymap.addControl(new mapboxgl.NavigationControl(), 'top-left');
 }
 
-function buildChartHtmlFromCmpData(json) {
-
+function buildChartDataFromJson(json) {
   let data = [];
 
   for (let h=0; h<24; h++) {
@@ -187,8 +187,11 @@ function buildChartHtmlFromCmpData(json) {
 
     data.push({hour:h, pickups:picks, dropoffs:drops});
   }
+  return data;
+}
 
-  new Morris.Line({
+function createChart(data) {
+  currentChart = new Morris.Line({
     // ID of the element in which to draw the chart.
     element: 'chart',
     // Chart data records -- each entry in this array corresponds to a point on
@@ -198,6 +201,7 @@ function buildChartHtmlFromCmpData(json) {
     xkey: 'hour',
     // A list of names of data record attributes that contain y-values.
     ykeys: ['pickups', 'dropoffs'],
+    ymax: 'auto '+ Math.round(currentTotal/5),
     // Labels for the ykeys -- will be displayed when you hover over the
     // chart.
     labels: ['Pickups', 'Dropoffs'],
@@ -210,10 +214,8 @@ function buildChartHtmlFromCmpData(json) {
   });
 }
 
-
 function dateFmt(x) {
-  const hourLabels = ['3 AM',
-                  '4 AM','5 AM','6 AM','7 AM',
+  const hourLabels = ['3 AM','4 AM','5 AM','6 AM','7 AM',
                   '8 AM','9 AM','10 AM','11 AM',
                   'Noon','1 PM','2 PM','3 PM',
                   '4 PM','5 PM','6 PM','7 PM',
@@ -222,14 +224,30 @@ function dateFmt(x) {
   return hourLabels[x.x];
 }
 
-function clickedOnTaz(e) {
-  console.log(e);
-  tazOfInterest = e.features[0].properties.taz;
-  let taz = tazOfInterest;
+// update the chart when user selects a new day
+function updateChart() {
+  let chart = document.getElementById("chart");
+  if (!chart) return;
 
+  // fetch the details
+  let finalUrl = api_server + 'tnc_trip_stats?taz=eq.' + chosenTaz
+                            + '&day_of_week=eq.' + day
+
+  fetch(finalUrl).then((resp) => resp.json()).then(function(jsonData) {
+      let data = buildChartDataFromJson(jsonData);
+      if (currentChart) currentChart.setData(data);
+  }).catch(function(error) {
+      console.log("err: "+error);
+  });
+}
+
+function clickedOnTaz(e) {
+  chosenTaz = e.features[0].properties.taz;
+  let taz = chosenTaz;
   let trips = Math.round(tripTotals[taz][day][chosenDir]);
   if (trips) {
-    app.details = ''+trips + ' Daily trips';
+    currentTotal = trips;
+    app.details = ''+ trips + ' Daily trips';
   } else {
     return;
   }
@@ -238,7 +256,10 @@ function clickedOnTaz(e) {
 
   // delete old chart
   let chart = document.getElementById("chart");
-  if (chart) chart.parentNode.removeChild(chart);
+  if (chart) {
+    chart.parentNode.removeChild(chart);
+    currentChart = null;
+  }
 
   // fetch the CMP details
   let finalUrl = api_server + 'tnc_trip_stats?taz=eq.' + taz
@@ -254,7 +275,8 @@ function clickedOnTaz(e) {
         .setHTML(popupText)
         .addTo(mymap);
 
-      let chartHtml = buildChartHtmlFromCmpData(jsonData);
+      let data = buildChartDataFromJson(jsonData);
+      createChart(data);
   }).catch(function(error) {
       console.log("err: "+error);
   });
@@ -276,8 +298,7 @@ function fetchTripTotals() {
   const url = api_server + 'taz_total';
 
   fetch(url)
-    .then((resp) => resp.json())
-    .then(function(jsonData) {
+    .then((resp) => resp.json()).then(function(jsonData) {
       tripTotals = calculateTripTotals(jsonData);
       queryServer();
     })
@@ -297,17 +318,13 @@ function queryServer() {
 
   // Fetch the segments
   fetch(finalUrl)
-    .then((resp) => resp.json())
-    .then(function(jsonData) {
-      let personJson = jsonData;
-      addTazLayer(personJson);
+    .then((resp) => resp.json()).then(function(jsonData) {
+      addTazLayer(jsonData);
     })
     .catch(function(error) {
       console.log("err: "+error);
     });
 }
-
-let segmentLos = {};
 
 function pickPickup(thing) {
   app.isPickupActive = true;
@@ -364,6 +381,7 @@ function clickDay(chosenDay) {
   day = parseInt(chosenDay);
   app.day = day;
   updateColors();
+  updateChart();
 }
 
 // Update all colors based on trip totals
