@@ -7,7 +7,7 @@ import vueSlider from 'vue-slider-component';
 
 let theme = "dark";
 
-let api_server = 'http://172.30.1.135/tnc/';
+let api_server = 'http://api/tnc/';
 
 // some important global variables.
 let tripTotals = {};
@@ -62,22 +62,22 @@ export default class PitchToggle {
         let _this = this;
 
         this._btn = document.createElement('button');
-        this._btn.className = 'mapboxgl-ctrl-icon mapboxgl-ctrl-pitchtoggle-2d';
+        this._btn.className = 'mapboxgl-ctrl-icon mapboxgl-ctrl-pitchtoggle-3d';
         this._btn.type = 'button';
         this._btn['aria-label'] = 'Toggle Pitch';
         this._btn.onclick = function() {
             if (map.getPitch() === 0) {
+                updateColors();
                 let options = {pitch: _this._pitch, bearing: _this._bearing};
                 if (_this._minpitchzoom && map.getZoom() > _this._minpitchzoom) {
                     options.zoom = _this._minpitchzoom;
                 }
                 map.easeTo(options);
                 _this._btn.className = 'mapboxgl-ctrl-icon mapboxgl-ctrl-pitchtoggle-2d';
-                updateColors();
             } else {
+                flattenBuildings();
                 map.easeTo({pitch: 0, bearing: 0});
                 _this._btn.className = 'mapboxgl-ctrl-icon mapboxgl-ctrl-pitchtoggle-3d';
-                flattenBuildings();
             }
         };
         this._container = document.createElement('div');
@@ -196,7 +196,7 @@ function buildChartHtmlFromCmpData(json) {
   let data = [];
 
   for (let h=0; h<24; h++) {
-    let hour = json[h];
+    let hour = json[(h+3) % 24];
     let picks = Number(hour.accpt_trips);
     let drops = Number(hour.avail_trips);
 
@@ -220,19 +220,20 @@ function buildChartHtmlFromCmpData(json) {
     xLabels: "Hour",
     xLabelAngle: 45,
     xLabelFormat: dateFmt,
-    //hideHover: 'true',
+    hideHover: 'true',
     parseTime: false,
   });
 }
 
 
 function dateFmt(x) {
-  const hourLabels = ['12 AM','1 AM','2 AM','3 AM',
+  const hourLabels = ['3 AM',
                   '4 AM','5 AM','6 AM','7 AM',
                   '8 AM','9 AM','10 AM','11 AM',
                   'Noon','1 PM','2 PM','3 PM',
                   '4 PM','5 PM','6 PM','7 PM',
-                  '8 PM','9 PM','10 PM','11 PM'];
+                  '8 PM','9 PM','10 PM','11 PM',
+                  '12 AM','1 AM','2 AM'];
   return hourLabels[x.x];
 }
 
