@@ -25,8 +25,8 @@ let mymap = new mapboxgl.Map({
     style: 'mapbox://styles/mapbox/dark-v9',
     center: [-122.43, 37.78],
     zoom: 12,
-    bearing: 0,
-    pitch: 0,
+    bearing: -30,
+    pitch: 50,
     attributionControl: true,
     logoPosition: 'bottom-left',
 });
@@ -58,7 +58,7 @@ export default class PitchToggle {
         let _this = this;
 
         this._btn = document.createElement('button');
-        this._btn.className = 'mapboxgl-ctrl-icon mapboxgl-ctrl-pitchtoggle-3d';
+        this._btn.className = 'mapboxgl-ctrl-icon mapboxgl-ctrl-pitchtoggle-2d';
         this._btn.type = 'button';
         this._btn['aria-label'] = 'Toggle Pitch';
         this._btn.onclick = function() {
@@ -149,7 +149,7 @@ function addTazLayer(tazs, options={}) {
         id: 'taz',
         type: 'fill-extrusion',
         paint: {
-            'fill-extrusion-opacity':0.75,
+            'fill-extrusion-opacity':0.6,
             'fill-extrusion-color': {
                 property: 'trips',
                 stops: colorStops,
@@ -162,10 +162,13 @@ function addTazLayer(tazs, options={}) {
     }
   );
 
+  // make taz hover cursor a pointer so user knows they can click.
   mymap.on("mousemove", "taz", function(e) {
+      mymap.getCanvas().style.cursor = e ? 'pointer' : '-webkit-grab';
   });
 
   mymap.on("mouseleave", "taz", function() {
+      mymap.getCanvas().style.cursor = '-webkit-grab';
   });
 
   mymap.on("click", "taz", function(e) {
