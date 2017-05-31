@@ -1,6 +1,6 @@
 'use strict';
 
-// Use npm and babel to support IE11/Safari
+// Must use npm and babel to support IE11/Safari
 import 'babel-polyfill';
 import 'isomorphic-fetch';
 import vueSlider from 'vue-slider-component';
@@ -16,13 +16,9 @@ let chosenDir = 'accpt_trips';
 let jsonByDay = {'avail_trips':{}, 'accpt_trips':{} };
 let tazOfInterest = 0;
 
-var url = 'https://api.mapbox.com/styles/v1/mapbox/'+theme+'-v9/tiles/256/{z}/{x}/{y}?access_token={accessToken}';
-var token = 'pk.eyJ1IjoicHNyYyIsImEiOiJjaXFmc2UxanMwM3F6ZnJtMWp3MjBvZHNrIn0._Dmske9er0ounTbBmdRrRQ';
-var attribution ='<a href="http://openstreetmap.org">OpenStreetMap</a> | ' +
-                 '<a href="http://mapbox.com">Mapbox</a>';
-mapboxgl.accessToken = token;
+let mapboxgl.accessToken = 'pk.eyJ1IjoicHNyYyIsImEiOiJjaXFmc2UxanMwM3F6ZnJtMWp3MjBvZHNrIn0._Dmske9er0ounTbBmdRrRQ';
 
-var mymap = new mapboxgl.Map({
+let mymap = new mapboxgl.Map({
     container: 'sfmap',
     style: 'mapbox://styles/mapbox/dark-v9',
     center: [-122.43, 37.78],
@@ -32,8 +28,6 @@ var mymap = new mapboxgl.Map({
     attributionControl: true,
     logoPosition: 'bottom-left',
 });
-
-var taz_fields = {select: 'taz,geometry' };
 
 // no ubers on the farallon islands (at least, not yet)
 let skipTazs = new Set([384, 385, 313, 305 ]);
@@ -177,18 +171,9 @@ function addTazLayer(tazs, options={}) {
     clickedOnTaz(e);
   });
 
-
   // Add nav controls
   mymap.addControl(new PitchToggle({bearing: -30, pitch:50, minpitchzoom:14}), 'top-left');
   mymap.addControl(new mapboxgl.NavigationControl(), 'top-left');
-}
-
-function styleByTotalTrips(feature) {
-  return;
-  //let avail_trips = totalTrips[
-  //let shade =
-
-  return {opacity: 0.0, fillColor: "red", fillOpacity: thing};
 }
 
 function buildChartHtmlFromCmpData(json) {
@@ -196,7 +181,7 @@ function buildChartHtmlFromCmpData(json) {
   let data = [];
 
   for (let h=0; h<24; h++) {
-    let hour = json[(h+3) % 24];
+    let hour = json[(h+3) % 24]; // %3 to start at 3AM
     let picks = Number(hour.accpt_trips);
     let drops = Number(hour.avail_trips);
 
@@ -258,8 +243,8 @@ function clickedOnTaz(e) {
   // fetch the CMP details
   let finalUrl = api_server + 'tnc_trip_stats?taz=eq.' + taz
                             + '&day_of_week=eq.' + day
+
   fetch(finalUrl).then((resp) => resp.json()).then(function(jsonData) {
-      console.log(jsonData);
       let popupText = "<h2>"+trips+" Daily trips</h2>" +
                       "<hr/>" +
                       "<div id=\"chart\" style=\"width: 300px; height:250px;\"></div>";
@@ -305,6 +290,7 @@ function queryServer() {
   const segmentUrl = api_server + 'json_taz?';
 
   // convert option list into a url parameter string
+  var taz_fields = {select: 'taz,geometry' };
   var params = [];
   for (let key in taz_fields) params.push(esc(key) + '=' + esc(taz_fields[key]));
   let finalUrl = segmentUrl + params.join('&');
@@ -315,7 +301,6 @@ function queryServer() {
     .then(function(jsonData) {
       let personJson = jsonData;
       addTazLayer(personJson);
-      //colorByLOS(personJson, app.sliderValue);
     })
     .catch(function(error) {
       console.log("err: "+error);
@@ -372,7 +357,6 @@ function sliderChanged(thing) {
   return;
   let newDay = timeSlider.data.indexOf(thing);
   day = parseInt(newDay);
-
   updateColors();
 }
 
