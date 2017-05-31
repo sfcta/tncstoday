@@ -220,38 +220,48 @@ function buildChartDataFromJson(json) {
   let data = [];
 
   for (let h=0; h<24; h++) {
-    let hour = json[(h+3) % 24]; // %3 to start at 3AM
-    let picks = Number(hour.accpt_trips);
-    let drops = Number(hour.avail_trips);
+    let record = json[(h+3) % 24]; // %3 to start at 3AM
+    let hour = Number(record.time.substring(0,2));
+    let picks = Number(record.accpt_trips);
+    let drops = Number(record.avail_trips);
 
-    data.push({hour:h, pickups:picks, dropoffs:drops});
+    data.push({hour:hour, pickups:picks, dropoffs:drops});
   }
   return data;
 }
 
 function createChart(data) {
+  // do some weird rounding to get y-axis scale to the 20s
+  let ymax = 0;
+  for (let entry of data) {
+    for (let key in entry) {
+      if (key==='hour') continue;
+      ymax = Math.max(ymax,entry[key]);
+    }
+  }
+  let z= Math.round(ymax/20)*20 + 20;
+
   currentChart = new Morris.Line({
     // ID of the element in which to draw the chart.
     element: 'chart',
-    // Chart data records -- each entry in this array corresponds to a point on
-    // the chart.
     data: data,
     // The name of the data record attribute that contains x-values.
     xkey: 'hour',
     // A list of names of data record attributes that contain y-values.
     ykeys: ['pickups', 'dropoffs'],
-    ymax: 'auto '+ Math.round(currentTotal/5),
-    // Labels for the ykeys -- will be displayed when you hover over the
-    // chart.
+    ymax: z,
     labels: ['Pickups', 'Dropoffs'],
     lineColors: ["#44f","#f66"],
     xLabels: "Hour",
     xLabelAngle: 45,
     xLabelFormat: dateFmt,
+    yLabelFormat: yFmt,
     hideHover: 'true',
     parseTime: false,
   });
 }
+
+function yFmt(y) { return Math.round(y) }
 
 function dateFmt(x) {
   const hourLabels = ['3 AM','4 AM','5 AM','6 AM','7 AM',
