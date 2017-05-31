@@ -430,6 +430,7 @@ function sliderChanged(thing) {
 
 function displayDetails() {
   let trips = Math.round(app.isPickupActive ? totalPickups[day] : totalDropoffs[day]);
+  trips = Math.round(trips/100)*100;
   let direction = (app.isPickupActive ? 'pickups' : 'dropoffs');
 
   app.details1 = weekdays[day] + ':';
