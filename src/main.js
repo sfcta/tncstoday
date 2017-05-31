@@ -9,11 +9,17 @@ let theme = "dark";
 
 let api_server = 'http://172.30.1.135/tnc/';
 
+// some important global variables.
+let tripTotals = {};
+let day = 0;
+let chosenDir = 'accpt_trips';
+let jsonByDay = {'avail_trips':{}, 'accpt_trips':{} };
+let tazOfInterest = 0;
+
 var url = 'https://api.mapbox.com/styles/v1/mapbox/'+theme+'-v9/tiles/256/{z}/{x}/{y}?access_token={accessToken}';
 var token = 'pk.eyJ1IjoicHNyYyIsImEiOiJjaXFmc2UxanMwM3F6ZnJtMWp3MjBvZHNrIn0._Dmske9er0ounTbBmdRrRQ';
 var attribution ='<a href="http://openstreetmap.org">OpenStreetMap</a> | ' +
                  '<a href="http://mapbox.com">Mapbox</a>';
-
 mapboxgl.accessToken = token;
 
 var mymap = new mapboxgl.Map({
@@ -27,20 +33,7 @@ var mymap = new mapboxgl.Map({
     logoPosition: 'bottom-left',
 });
 
-let segmentLayer;
-let selectedSegment, popupSegment, hoverColor, popupColor;
-
-let speedCache = {};
-let tripTotals = {};
-
-let day = 0;
-
-let chosenDir = 'accpt_trips';
-let jsonByDay = {'avail_trips':{}, 'accpt_trips':{} };
-
-var taz_fields = {
-  select: 'taz,geometry',
-};
+var taz_fields = {select: 'taz,geometry' };
 
 // no ubers on the farallon islands (at least, not yet)
 let skipTazs = new Set([384, 385, 313, 305 ]);
@@ -49,17 +42,56 @@ let dark_styles = { normal  : {fillOpacity: 0.8, opacity: 0.0},
                     selected: {fillOpacity: 0.4, color: "#fff", opacity: 1.0},
                     popup   : {color: "#fff",    weight:5, opacity: 1.0, fillOpacity: 0.8},
 };
-let light_styles = {normal  : {"color": "#3c6", "weight": 4, "opacity": 1.0 },
-                    selected: {"color": "#39f", "weight": 10, "opacity": 1.0 },
-                    popup   : {"color": "#33f", "weight": 10, "opacity": 1.0 }
-};
-let styles = (theme==='dark' ? dark_styles : light_styles);
+let styles = dark_styles; // (theme==='dark' ? dark_styles : darklight_styles);
 
 let colorStops = [[0,'#208'],[60,'#44c'],[150,'#4a4'],[350,'#ee4'],[700,'#f46'],[1200,'#c00']];
 let totalColors =       [ '#208', '#44c', '#4a4', '#ee4' , '#F46', '#c00'];
 let totalColorCutoffs = [   60.0 ,   150.0 ,   350.0 ,  700.0, 1200.0];
 
-let tazLayers = {};
+// ----------------------------------------------------------------------------
+// PITCH TOGGLE Button
+// See https://github.com/tobinbradley/mapbox-gl-pitch-toggle-control
+export default class PitchToggle {
+    constructor({bearing = -20, pitch = 50, minpitchzoom = null}) {
+        this._bearing = bearing;
+        this._pitch = pitch;
+        this._minpitchzoom = minpitchzoom;
+    }
+    onAdd(map) {
+        this._map = map;
+        let _this = this;
+
+        this._btn = document.createElement('button');
+        this._btn.className = 'mapboxgl-ctrl-icon mapboxgl-ctrl-pitchtoggle-2d';
+        this._btn.type = 'button';
+        this._btn['aria-label'] = 'Toggle Pitch';
+        this._btn.onclick = function() {
+            if (map.getPitch() === 0) {
+                let options = {pitch: _this._pitch, bearing: _this._bearing};
+                if (_this._minpitchzoom && map.getZoom() > _this._minpitchzoom) {
+                    options.zoom = _this._minpitchzoom;
+                }
+                map.easeTo(options);
+                _this._btn.className = 'mapboxgl-ctrl-icon mapboxgl-ctrl-pitchtoggle-2d';
+                updateColors();
+            } else {
+                map.easeTo({pitch: 0, bearing: 0});
+                _this._btn.className = 'mapboxgl-ctrl-icon mapboxgl-ctrl-pitchtoggle-3d';
+                flattenBuildings();
+            }
+        };
+        this._container = document.createElement('div');
+        this._container.className = 'mapboxgl-ctrl mapboxgl-ctrl-group';
+        this._container.appendChild(this._btn);
+
+        return this._container;
+    }
+
+    onRemove() {
+        this._container.parentNode.removeChild(this._container);
+        this._map = undefined;
+    }
+}
 
 function getColor(numTrips) {
   let i;
@@ -69,8 +101,7 @@ function getColor(numTrips) {
   return totalColors[i]
 }
 
-
-// First create one giant GeoJSON layer. This should really be done in PostGIS, but I'm rushing.
+// Create one giant GeoJSON layer. This should really be done in PostGIS, but I'm rushing.
 // See http://www.postgresonline.com/journal/archives/267-Creating-GeoJSON-Feature-Collections-with-JSON-and-PostGIS-functions.html
 function buildTazDataFromJson(tazs, options) {
   // loop for the two directions
@@ -136,24 +167,31 @@ function addTazLayer(tazs, options={}) {
     }
   );
 
+  mymap.on("mousemove", "taz", function(e) {
+    tazOfInterest = e.features[0].properties.taz;
+  });
+
+  mymap.on("mouseleave", "taz", function() {
+  });
+
+  mymap.on("click", "taz", function(e) {
+    tazOfInterest = e.features[0].properties.taz;
+    console.log(tazOfInterest);
+    showTazStats(tazOfInterest);
+  });
+
+
+  // Add nav controls
   mymap.addControl(new PitchToggle({bearing: -30, pitch:50, minpitchzoom:13}), 'top-left');
   mymap.addControl(new mapboxgl.NavigationControl(), 'top-left');
-
-  /*
-    onEachFeature: function(feature, layer) {
-      layer.on({ mouseover: hoverOnTaz,
-               click : clickedOnTaz,
-      });
-    },
-    });
-
-    // hang onto this layer so we can do stuff to it later
-    tazLayers[parseInt(taz.taz)] = layer;
-    layer.addTo(mymap);
-  }
-  */
 }
 
+function showTazStats(taz) {
+  let z = jsonByDay[chosenDir][day];
+  console.log(z);
+
+  app.details = ''+ z[taz][trips] + ' daily trips';
+}
 
 function styleByTotalTrips(feature) {
   return;
@@ -161,26 +199,6 @@ function styleByTotalTrips(feature) {
   //let shade =
 
   return {opacity: 0.0, fillColor: "red", fillOpacity: thing};
-}
-
-
-function hoverOnTaz(e) {
-      // don't do anything if we just moused over the already-popped up segment
-      if (e.target == popupSegment) return;
-
-      let segment = e.target.feature;
-      let taz = segment.geometry.taz;
-
-      // return previously-hovered segment to its original color
-      if (selectedSegment != popupSegment) {
-        if (selectedSegment) {
-          selectedSegment.setStyle(styles.normal);
-        }
-      }
-
-      selectedSegment = e.target;
-      selectedSegment.setStyle(styles.selected);
-      selectedSegment.bringToFront();
 }
 
 function buildChartHtmlFromCmpData(json) {
@@ -262,8 +280,6 @@ function clickedOnTaz(e) {
 }
 
 let esc = encodeURIComponent;
-
-
 
 function calculateTripTotals(jsonData) {
   let totals = [];
@@ -364,7 +380,6 @@ let timeSlider = {
             "height": "14px"
           },
 };
-// ------
 
 function sliderChanged(thing) {
   return;
@@ -400,6 +415,7 @@ let app = new Vue({
     timeSlider: timeSlider,
     day: 0,
     days: ['Mo','Tu','We','Th','Fr','Saturday','Sunday'],
+    details: "Click on a neighborhood for details.",
   },
   methods: {
     pickPickup: pickPickup,
@@ -415,53 +431,3 @@ let app = new Vue({
 });
 
 fetchTripTotals();
-
-// ----------------------------------------------------------------------------
-// PITCH TOGGLE Button
-// See https://github.com/tobinbradley/mapbox-gl-pitch-toggle-control
-export default class PitchToggle {
-
-    constructor({bearing = -20, pitch = 50, minpitchzoom = null}) {
-        this._bearing = bearing;
-        this._pitch = pitch;
-        this._minpitchzoom = minpitchzoom;
-    }
-
-    onAdd(map) {
-        this._map = map;
-        let _this = this;
-
-        this._btn = document.createElement('button');
-        this._btn.className = 'mapboxgl-ctrl-icon mapboxgl-ctrl-pitchtoggle-2d';
-        this._btn.type = 'button';
-        this._btn['aria-label'] = 'Toggle Pitch';
-        this._btn.onclick = function() {
-            if (map.getPitch() === 0) {
-                let options = {pitch: _this._pitch, bearing: _this._bearing};
-                if (_this._minpitchzoom && map.getZoom() > _this._minpitchzoom) {
-                    options.zoom = _this._minpitchzoom;
-                }
-                map.easeTo(options);
-                _this._btn.className = 'mapboxgl-ctrl-icon mapboxgl-ctrl-pitchtoggle-2d';
-                updateColors();
-            } else {
-                map.easeTo({pitch: 0, bearing: 0});
-                _this._btn.className = 'mapboxgl-ctrl-icon mapboxgl-ctrl-pitchtoggle-3d';
-                flattenBuildings();
-            }
-        };
-
-
-        this._container = document.createElement('div');
-        this._container.className = 'mapboxgl-ctrl mapboxgl-ctrl-group';
-        this._container.appendChild(this._btn);
-
-        return this._container;
-    }
-
-    onRemove() {
-        this._container.parentNode.removeChild(this._container);
-        this._map = undefined;
-    }
-
-}
