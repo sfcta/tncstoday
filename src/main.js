@@ -12,8 +12,8 @@ let api_server = 'http://api/tnc/';
 // some important global variables.
 let tripTotals = null;
 let day = 0;
-let chosenDir = 'accpt_trips';
-let jsonByDay = {'avail_trips':{}, 'accpt_trips':{} };
+let chosenDir = 'pickups';
+let jsonByDay = {'dropoffs':{}, 'pickups':{} };
 let chosenTaz = 0;
 let currentChart = null;
 let currentTotal = 0;
@@ -221,8 +221,8 @@ function buildChartDataFromJson(json) {
   for (let h=0; h<24; h++) {
     let record = json[(h+3) % 24]; // %3 to start at 3AM
     let hour = Number(record.time.substring(0,2));
-    let picks = Number(record.accpt_trips);
-    let drops = Number(record.avail_trips);
+    let picks = Number(record.pickups);
+    let drops = Number(record.dropoffs);
 
     data.push({hour:hour, pickups:picks, dropoffs:drops});
   }
@@ -346,8 +346,8 @@ function calculateTripTotals(jsonData) {
     totals[taz][record.day_of_week] = record;
 
     // big sum total, too
-    totalPickups[record.day_of_week] += record.accpt_trips;
-    totalDropoffs[record.day_of_week] += record.avail_trips;
+    totalPickups[record.day_of_week] += record.pickups;
+    totalDropoffs[record.day_of_week] += record.dropoffs;
   }
 
   displayDetails();  // display daily total now that we have it
@@ -397,8 +397,8 @@ function showDailyChart() {
   for (let h=0; h<24; h++) {
     let timeper = (h+3) % 24 // %3 to start at 3AM
 
-    let picks = dailyTotals[day][timeper]['accpt_trips'];
-    let drops = dailyTotals[day][timeper]['avail_trips'];
+    let picks = dailyTotals[day][timeper]['pickups'];
+    let drops = dailyTotals[day][timeper]['dropoffs'];
 
     data.push({hour:h, pickups:picks, dropoffs:drops});
   }
@@ -434,7 +434,7 @@ function showDailyChart() {
 function pickPickup(thing) {
   app.isPickupActive = true;
   app.isDropoffActive = false;
-  chosenDir = 'accpt_trips';
+  chosenDir = 'pickups';
 
   displayDetails();
   updateColors();
@@ -443,7 +443,7 @@ function pickPickup(thing) {
 function pickDropoff(thing) {
   app.isPickupActive = false;
   app.isDropoffActive = true;
-  chosenDir = 'avail_trips';
+  chosenDir = 'dropoffs';
 
   displayDetails();
   updateColors();
@@ -518,29 +518,29 @@ let dailyTotals = {};
 let maxHourlyTrips = 0;
 
 function fetchDailyDetails() {
-  const url = api_server + 'tnc_trip_stats?select=taz,day_of_week,time,avail_trips,accpt_trips';
+  const url = api_server + 'tnc_trip_stats?select=taz,day_of_week,time,dropoffs,pickups';
   fetch(url).then((resp) => resp.json()).then(function(json) {
 
     dailyTotals = {};
     for (let record of json) {
       let taz = record.taz;
-      let pickup = record.accpt_trips;
-      let dropoff = record.avail_trips;
+      let pickup = record.pickups;
+      let dropoff = record.dropoffs;
       let day = record.day_of_week;
       let time = parseInt(record.time.substring(0,2));
 
       if (!dailyTotals[day]) dailyTotals[day] = [];
       if (!dailyTotals[day][time]) {
         dailyTotals[day][time] = {};
-        dailyTotals[day][time]['avail_trips'] = 0;
-        dailyTotals[day][time]['accpt_trips'] = 0;
+        dailyTotals[day][time]['dropoffs'] = 0;
+        dailyTotals[day][time]['pickups'] = 0;
       }
 
-      dailyTotals[day][time]['avail_trips'] += dropoff;
-      dailyTotals[day][time]['accpt_trips'] += pickup;
+      dailyTotals[day][time]['dropoffs'] += dropoff;
+      dailyTotals[day][time]['pickups'] += pickup;
       maxHourlyTrips = Math.max(maxHourlyTrips,
-                                dailyTotals[day][time]['avail_trips'],
-                                dailyTotals[day][time]['accpt_trips']
+                                dailyTotals[day][time]['dropoffs'],
+                                dailyTotals[day][time]['pickups']
       );
     }
     showDailyChart();
