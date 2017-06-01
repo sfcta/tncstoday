@@ -202,7 +202,6 @@ function addTazLayer(tazs, options={}) {
   });
 
   mymap.on("click", "taz", function(e) {
-    console.log(e);
     clickedOnTaz(e);
   });
 

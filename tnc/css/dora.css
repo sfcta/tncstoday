@@ -9,9 +9,18 @@ p {color:#ccc;}
 h1,h3,h4,h5 {color: white; }
 h2 {margin-top:4px;}
 h3 {padding-top:5px;}
+h4 {margin-right:10px;}
 h5 {margin-top:0px;}
 
+
 #container { position: relative; width:100%; height:100%; background-color:#888;}
+
+.logo {
+  text-align:right;
+  vertical-align:center;
+  margin-left:10px;
+  margin-right:10px;
+}
 
 #panel {
   display: flex;
@@ -31,7 +40,7 @@ h5 {margin-top:0px;}
   color:white;
 }
 
-.boop { margin: 6px; cursor:pointer; border-style:solid; border-width:2px; border-color: #fff;}
+.colors { margin: 5px; cursor:pointer; border-style:solid; border-width:1px; border-color: #fff;}
 
 #sfmap {
   margin-right: 400px;
@@ -66,3 +75,6 @@ h5 {margin-top:0px;}
 .mapboxgl-ctrl-pitchtoggle-2d {
     background-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMCIgaGVpZ2h0PSIzMCI+ICAgIDx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkeT0iLjM1ZW0iIHN0eWxlPSJmb250LXNpemU6IDE0cHg7IGZvbnQtZmFtaWx5OiAnSGVsdmV0aWNhIE5ldWUnLEFyaWFsLEhlbHZldGljYSxzYW5zLXNlcmlmOyBmb250LXdlaWdodDogYm9sZDsgdGV4dC1hbmNob3I6IG1pZGRsZTsiPjJEPC90ZXh0Pjwvc3ZnPg==);
 }
+
+a {color: #fff;}
+a:hover {color: #ddd;}

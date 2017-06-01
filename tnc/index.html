@@ -4,9 +4,7 @@
     <title>TNC Explorer</title>
 
     <!-- FAVICONS -->
-    <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
-    <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
-    <meta name="theme-color" content="#ffffff">
+<link rel="shortcut icon" href="http://www.sfcta.org/sites/all/themes/sfcta/favicon.ico" type="image/vnd.microsoft.icon" />    <meta name="theme-color" content="#ffffff">
 
     <!-- LEAFLET -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.3/dist/leaflet.css" />
@@ -40,8 +38,7 @@
 
       <div id="panel">
           <div class="dashboard">
-            <h3><b>TNC EXPLORER &raquo;<br/><br/>SAN FRANCISCO COUNTY TRANSPORTATION AUTHORITY</b></h3>
-            <br/>
+            <h3>TNC TRIP EXPLORER &raquo;&raquo;</h3>
             <hr/>
             <div id="picker">
                 <h5>CHOOSE DIRECTION AND DAY OF WEEK:</h5>
@@ -63,11 +60,8 @@
                     <vue-slider v-bind="timeSlider" v-model="sliderValue"></vue-slider>
                   </div>
                 </h5>
-
-                <br/>
-                <br/>
-                <br/>
                 <div id="stats-panel">
+                  <br/><br/>
                   <hr/>
                   <h5>CITYWIDE STATISTICS:</h5>
 
@@ -78,10 +72,18 @@
             </div>
           </div>
           <div id="color-panel">
-            <img class="boop" src="/light.jpg" width="50" @click="pickTheme(1)" title="Pick a color theme!"></img>
-            <img class="boop" src="/dark.jpg" width="50" @click="pickTheme(2)"></img>
-            <img class="boop" src="/neon.jpg" width="50" @click="pickTheme(3)"></img>
+            <img class="colors" src="/light.jpg" width="35" @click="pickTheme(1)" title="Pick a color theme!"></img>
+            <img class="colors" src="/dark.jpg"  width="35" @click="pickTheme(2)" title="Pick a color theme!"></img>
+            <img class="colors" src="/neon.jpg"  width="35" @click="pickTheme(3)" title="Pick a color theme!"></img>
           </div>
+          <div class="logo">
+            <hr/>
+            <table><tr><td>
+              <h4 class="agency"><b><a target="_blank" href="http://www.sfcta.org">SAN FRANCISCO COUNTY TRANSPORTATION AUTHORITY</a></b></h4></td>
+              <td><a class="agency-link" target="_blank" href="http://www.sfcta.org"><img src="/sfcta-logo.png" width=80 height=80 ></img></a></td></tr>
+            </table>
+          </div>
+
 
 
       </div>
