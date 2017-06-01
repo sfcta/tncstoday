@@ -33,7 +33,7 @@ let mymap = new mapboxgl.Map({
 
 // no ubers on the farallon islands (at least, not yet)
 let skipTazs = new Set([384, 385, 313, 305 ]);
-let weekdays = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+let weekdays = ['Mondays','Tuesdays','Wednesdays','Thursdays','Fridays','Saturdays','Sundays'];
 
 let colorRamp1 = [
        [10,'#FBFCBD'],
