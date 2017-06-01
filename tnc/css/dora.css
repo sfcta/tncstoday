@@ -47,8 +47,13 @@ h5 {margin-top:0px;}
   height:100%;
 }
 
+#daily-chart {
+  height:225px;
+}
+
 .dashboard {
   padding:10px;
+  padding-bottom:0px;
   flex: 1;
   overflow: auto;
 }
