@@ -10,7 +10,7 @@ let theme = "dark";
 let api_server = 'http://api/tnc/';
 
 // some important global variables.
-let tripTotals = {};
+let tripTotals = null;
 let day = 0;
 let chosenDir = 'accpt_trips';
 let jsonByDay = {'avail_trips':{}, 'accpt_trips':{} };
@@ -260,7 +260,7 @@ function createChart(data) {
   });
 }
 
-function yFmt(y) { return Math.round(y) }
+function yFmt(y) { return Math.round(y).toLocaleString() }
 
 function dateFmt(x) {
   const hourLabels = ['3 AM','4 AM','5 AM','6 AM','7 AM',
@@ -336,6 +336,9 @@ function clickedOnTaz(e) {
 let esc = encodeURIComponent;
 
 function calculateTripTotals(jsonData) {
+  totalPickups =  [0,0,0,0,0,0,0];
+  totalDropoffs = [0,0,0,0,0,0,0];
+
   let totals = [];
   for (let record of jsonData) {
     let taz = 0+record.taz;
@@ -352,6 +355,8 @@ function calculateTripTotals(jsonData) {
 }
 
 function fetchTripTotals() {
+  if (tripTotals) return;
+
   const url = api_server + 'taz_total';
 
   fetch(url)
@@ -377,11 +382,53 @@ function queryServer() {
   fetch(finalUrl)
     .then((resp) => resp.json()).then(function(jsonData) {
       addTazLayer(jsonData);
-      //fetchDailyDetails();
+      fetchDailyDetails();
     })
     .catch(function(error) {
       console.log("err: "+error);
     });
+}
+
+let dailyChart = null;
+
+function showDailyChart() {
+  let data = [];
+
+  for (let h=0; h<24; h++) {
+    let timeper = (h+3) % 24 // %3 to start at 3AM
+
+    let picks = dailyTotals[day][timeper]['accpt_trips'];
+    let drops = dailyTotals[day][timeper]['avail_trips'];
+
+    data.push({hour:h, pickups:picks, dropoffs:drops});
+  }
+
+  if (dailyChart) {
+    dailyChart.setData(data);
+  } else {
+    dailyChart = new Morris.Area({
+      // ID of the element in which to draw the chart.
+      element: 'daily-chart',
+      data: data,
+      // The name of the data record attribute that contains x-values.
+      xkey: 'hour',
+      // A list of names of data record attributes that contain y-values.
+      ykeys: ['pickups', 'dropoffs'],
+      ymax: maxHourlyTrips,
+      labels: ['Pickups', 'Dropoffs'],
+      lineColors: ["#44f","#f66"],
+      xLabels: "Hour",
+      xLabelAngle: 45,
+      xLabelFormat: dateFmt,
+      yLabelFormat: yFmt,
+      hideHover: 'true',
+      parseTime: false,
+      fillOpacity: 0.4,
+      pointSize: 1,
+      lineColors: ['#2ac','#f42'],
+      behaveLikeLine: true,
+    });
+  }
 }
 
 function pickPickup(thing) {
@@ -453,6 +500,7 @@ function clickDay(chosenDay) {
   displayDetails();
   updateColors();
   updateChart();
+  showDailyChart();
 }
 
 // Update all colors based on trip totals
@@ -466,34 +514,43 @@ function flattenBuildings() {
   mymap.setPaintProperty('taz','fill-extrusion-height',0);
 }
 
-// dailyTotal[day][time][pickup/dropoff]
 let dailyTotals = {};
+let maxHourlyTrips = 0;
 
 function fetchDailyDetails() {
-
   const url = api_server + 'tnc_trip_stats?select=taz,day_of_week,time,avail_trips,accpt_trips';
   fetch(url).then((resp) => resp.json()).then(function(json) {
 
-    console.log(json);
+    dailyTotals = {};
     for (let record of json) {
       let taz = record.taz;
       let pickup = record.accpt_trips;
       let dropoff = record.avail_trips;
       let day = record.day_of_week;
-      let time = 0+record.time.substring(0,2);
+      let time = parseInt(record.time.substring(0,2));
+
+      if (!dailyTotals[day]) dailyTotals[day] = [];
       if (!dailyTotals[day][time]) {
+        dailyTotals[day][time] = {};
         dailyTotals[day][time]['avail_trips'] = 0;
         dailyTotals[day][time]['accpt_trips'] = 0;
       }
 
-      dailyTotals[day][time]['avail_trips'] += record.dropoff;
-      dailyTotals[day][time]['accpt_trips'] += record.pickup;
+      dailyTotals[day][time]['avail_trips'] += dropoff;
+      dailyTotals[day][time]['accpt_trips'] += pickup;
+      maxHourlyTrips = Math.max(maxHourlyTrips,
+                                dailyTotals[day][time]['avail_trips'],
+                                dailyTotals[day][time]['accpt_trips']
+      );
     }
-    console.log(dailyTotals);
+    showDailyChart();
 
   }).catch(function(error) {
     console.log("err: "+error);
   });
+
+  maxHourlyTrips = 20000; //Math.round(maxHourlyTrips/500)*500;
+  return dailyTotals;
 }
 
 function pickTheme(theme) {
