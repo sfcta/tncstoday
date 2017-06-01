@@ -4,11 +4,8 @@
     <title>TNC Explorer</title>
 
     <!-- FAVICONS -->
-<link rel="shortcut icon" href="http://www.sfcta.org/sites/all/themes/sfcta/favicon.ico" type="image/vnd.microsoft.icon" />    <meta name="theme-color" content="#ffffff">
-
-    <!-- LEAFLET -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.3/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.0.3/dist/leaflet.js"></script>
+    <link rel="shortcut icon" href="http://www.sfcta.org/sites/all/themes/sfcta/favicon.ico" type="image/vnd.microsoft.icon" />
+    <meta name="theme-color" content="#ffffff"/>
 
     <!-- VUE -->
     <script src="https://unpkg.com/vue"></script>
@@ -18,7 +15,7 @@
     <link href='https://api.mapbox.com/mapbox-gl-js/v0.37.0/mapbox-gl.css' rel='stylesheet' />
 
     <!-- SEMANTIC UI -->
-    <link rel="stylesheet" type="text/css" href="semantic/semantic.min.css">
+    <link rel="stylesheet" type="text/css" href="semantic/semantic.min.css" />
     <script
       src="https://code.jquery.com/jquery-3.1.1.min.js"
       integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
@@ -26,7 +23,7 @@
     <script src="semantic/semantic.min.js"></script>
 
     <!-- MORRIS CHARTS -->
-    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/morris.js/0.5.1/morris.css">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/morris.js/0.5.1/morris.css" />
     <script src="//cdnjs.cloudflare.com/ajax/libs/raphael/2.1.0/raphael-min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/morris.js/0.5.1/morris.min.js"></script>
 
@@ -54,12 +51,11 @@
                         v-bind:class="{ active: index==day, blue: index <5, red: index >= 5 }"
                         v-bind:class="">{{item}}
                 </button>
-                  <div id="sliderpanel">
+                <div id="sliderpanel">
                     <button class="mini ui inverted active red button">All Day</button>
 
                     <vue-slider v-bind="timeSlider" v-model="sliderValue"></vue-slider>
-                  </div>
-                </h5>
+                </div>
                 <div id="stats-panel">
                   <br/><br/>
                   <hr/>
@@ -78,19 +74,13 @@
           </div>
           <div class="logo">
             <hr/>
-            <table><tr><td>
-              <h4 class="agency"><b><a target="_blank" href="http://www.sfcta.org">SAN FRANCISCO COUNTY TRANSPORTATION AUTHORITY</a></b></h4></td>
-              <td><a class="agency-link" target="_blank" href="http://www.sfcta.org"><img src="/sfcta-logo.png" width=80 height=80 ></img></a></td></tr>
+            <table><tr>
+              <td><h4 class="agency"><b><a target="_blank" href="http://www.sfcta.org">SAN FRANCISCO COUNTY TRANSPORTATION AUTHORITY</a></b></h4></td>
+			  <td><a class="agency-link" target="_blank" href="http://www.sfcta.org"><img src="/sfcta-logo.png" width=80 height=80 ></img></a></td></tr>
             </table>
           </div>
-
-
-
       </div>
-
-      <div id="sfmap">
-      </div>
-
+      <div id="sfmap"></div>
     </div>
 
     <script type="application/javascript" src="lib/main.bundle.js"></script>
