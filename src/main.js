@@ -200,10 +200,6 @@ function addTazLayer(tazs, options={}) {
        paint: {
             'fill-extrusion-opacity':1.0,
             'fill-extrusion-color': '#fff',
-//            {
-//                property: 'trips',
-//                stops: taColorRamp,
-//            },
             'fill-extrusion-height': {
                 property: 'trips',
                 type:'identity',
@@ -297,6 +293,14 @@ function updateChart() {
   let chart = document.getElementById("chart");
   if (!chart) return;
 
+  let trips = Math.round(tripTotals[chosenTaz][day][chosenDir]);
+  let title = buildPopupTitle(trips);
+
+  let element = document.getElementById("popup-title");
+  element.innerHTML = title;
+
+  console.log(title);
+
   // fetch the details
   let finalUrl = api_server + 'tnc_trip_stats?taz=eq.' + chosenTaz
                             + '&day_of_week=eq.' + day
@@ -311,6 +315,12 @@ function updateChart() {
 
 let popup = null;
 
+function buildPopupTitle(trips) {
+  let title = "<h3 id=\"popup-title\">" +
+              weekdays[day] + " in selected area:<br/>" + trips + " daily "+chosenDir+"</h3>"
+  return title;
+}
+
 function clickedOnTaz(e) {
   chosenTaz = e.features[0].properties.taz;
   let taz = chosenTaz;
@@ -321,7 +331,7 @@ function clickedOnTaz(e) {
     return;
   }
 
-  //TODO highlight it
+  // highlight the TAZ
   mymap.setFilter("taz-selected", ["==", "taz", chosenTaz]);
 
   // delete old chart
@@ -336,11 +346,15 @@ function clickedOnTaz(e) {
                             + '&day_of_week=eq.' + day
 
   fetch(finalUrl).then((resp) => resp.json()).then(function(jsonData) {
-      let popupText = "<h2>"+trips+" Daily trips</h2>" +
-                      "<hr/>" +
-                      "<div id=\"chart\" style=\"width: 300px; height:250px;\"></div>";
+      let popupText = buildPopupTitle(trips) +
+              "<hr/>" +
+              "<div id=\"chart\" style=\"width: 300px; height:250px;\"></div>" +
+              "<p text-align=\"right\" class=\"hint\"><i>TAZ Code: "+ chosenTaz + "</i></p>";
 
-      if (popup) { popup.remove(); popup=null}
+      if (popup) {
+        popup.remove();
+        popup=null
+      }
 
       popup = new mapboxgl.Popup({closeOnClick: true})
         .setLngLat(e.lngLat)
@@ -362,7 +376,7 @@ function calculateTripTotals(jsonData) {
 
   let totals = [];
   for (let record of jsonData) {
-    let taz = 0+record.taz;
+    let taz = parseInt(record.taz);
     if (!(taz in totals)) totals[taz] = {};
     totals[taz][record.day_of_week] = record;
 
@@ -464,6 +478,7 @@ function pickPickup(thing) {
 
   displayDetails();
   updateColors();
+  updateChart();
   showDailyChart();
 }
 
@@ -474,6 +489,7 @@ function pickDropoff(thing) {
 
   displayDetails();
   updateColors();
+  updateChart();
   showDailyChart();
 }
 

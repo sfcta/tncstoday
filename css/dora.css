@@ -12,6 +12,7 @@ h3 {padding-top:5px;}
 h4 {margin-right:10px;}
 h5 {margin-top:0px;}
 
+hr {margin-bottom:0px;}
 
 #container { position: relative; width:100%; height:100%; background-color:#888;}
 
@@ -21,6 +22,8 @@ h5 {margin-top:0px;}
   margin-left:10px;
   margin-right:10px;
 }
+
+#table-logo {margin-top:5px;}
 
 #panel {
   display: flex;
@@ -36,11 +39,14 @@ h5 {margin-top:0px;}
   float: right;
 }
 
+p.hint {color:#888; text-align:right; margin-right:25px;}
+
 #panel label {
   color:white;
 }
 
-.colors { margin: 5px; cursor:pointer; border-style:solid; border-width:1px; border-color: #fff;}
+.colors { margin: 5px; cursor:pointer; border-style:solid; border-width:1px; border-color: #eee; opacity:0.80;}
+.colors:hover {opacity: 1.0; border-color: #fff;}
 
 #sfmap {
   margin-right: 400px;
@@ -49,6 +55,12 @@ h5 {margin-top:0px;}
 
 #daily-chart {
   height:225px;
+}
+
+#popup-title {
+  color:#222;
+  margin-top:0px;
+  padding-top:0px;
 }
 
 .dashboard {
@@ -83,3 +95,8 @@ h5 {margin-top:0px;}
 
 a {color: #fff;}
 a:hover {color: #ddd;}
+
+.mapboxgl-popup-content {
+  opacity:0.85;
+  padding-bottom: 5px;
+}
