@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>TNC Explorer</title>
+    <title>TNCs TODAY</title>
 
     <!-- FAVICONS -->
     <link rel="shortcut icon" href="http://www.sfcta.org/sites/all/themes/sfcta/favicon.ico" type="image/vnd.microsoft.icon" />
@@ -35,20 +35,23 @@
 
       <div id="panel">
           <div class="dashboard">
-            <h3>TNC TRIP EXPLORER &raquo;&raquo;</h3>
+            <h3>TNC'S TODAY &raquo;&raquo; DATA EXPLORER</h3>
+            <br/>
             <hr/>
             <div id="picker">
-                <h5>CHOOSE DIRECTION AND DAY OF WEEK:</h5>
+                <h5>CHOOSE DIRECTION:</h5>
                 <button @click="pickPickup" v-bind:class="{ active: isPickupActive }"
                          class="mini ui inverted blue button">Pick-ups</button>
                 <button @click="pickDropoff" v-bind:class="{ active: isDropoffActive }"
                          class="mini ui inverted red button">Drop-offs</button>
                 <br/>
                 <br/>
+                <hr/>
+                <h5>CHOOSE DAY OF WEEK:</h5>
                 <button v-for="(item, index) in days"
                         @click="clickDay(index)"
                         class="mini ui inverted button"
-                        v-bind:class="{ active: index==day, violet: index <5, purple: index >= 5 }"
+                        v-bind:class="{ active: index==day, green: index <5, yellow: index >= 5 }"
                         v-bind:class="">{{item}}
                 </button>
                 <div id="sliderpanel">
@@ -56,10 +59,11 @@
 
                     <vue-slider v-bind="timeSlider" v-model="sliderValue"></vue-slider>
                 </div>
+                <div id="stats-loader" class="ui loader" v-bind:class="{active: nowMoloading}"></div>
                 <div id="stats-panel">
-                  <br/><br/>
+                  <br/>
+                  <br/>
                   <hr/>
-                  <h5>CITYWIDE STATISTICS:</h5>
                   <h1>{{details1}}<br/>
                       {{details2}}</h1>
                   <div id="daily-chart"></div>

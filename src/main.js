@@ -427,6 +427,8 @@ function queryServer() {
 let dailyChart = null;
 
 function showDailyChart() {
+  app.nowMoloading = false;
+
   let data = [];
 
   for (let h=0; h<24; h++) {
@@ -440,7 +442,7 @@ function showDailyChart() {
 
   if (dailyChart) {
     dailyChart.options.labels = [ app.isPickupActive ? 'Pickups':'Dropoffs'];
-    dailyChart.options.lineColors = [app.isPickupActive ? '#2ac':'#f42']; //,["#44f","#f66"],
+    dailyChart.options.lineColors = [day < 5 ? '#1fc231':'#ffe21f']; //,["#44f","#f66"],
     dailyChart.options.ykeys = [app.isPickupActive ? 'pickups': 'dropoffs'];
 
     dailyChart.setData(data);
@@ -456,7 +458,7 @@ function showDailyChart() {
       ykeys: [app.isPickupActive ? 'pickups': 'dropoffs'],
       ymax: maxHourlyTrips,
       labels: [ app.isPickupActive ? 'Pickups':'Dropoffs'],
-      lineColors: [app.isPickupActive ? '#2ac':'#f42'],//,["#44f","#f66"],
+      lineColors: [day < 5 ? '#1fc231':'#ffe21f'],
       xLabels: "Hour",
       xLabelAngle: 45,
       xLabelFormat: dateFmt,
@@ -465,7 +467,6 @@ function showDailyChart() {
       parseTime: false,
       fillOpacity: 0.4,
       pointSize: 1,
-      //lineColors: [app.isPickupActive ? '#2ac':'#f42'],
       behaveLikeLine: true,
     });
   }
@@ -635,6 +636,7 @@ let app = new Vue({
     days: ['Mo','Tu','We','Th','Fr','Sa','Su'],
     details1: '',
     details2: '',
+    nowMoloading: true,
   },
   methods: {
     pickPickup: pickPickup,
