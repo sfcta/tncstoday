@@ -3608,10 +3608,6 @@ function addTazLayer(tazs) {
     paint: {
       'fill-extrusion-opacity': 1.0,
       'fill-extrusion-color': '#fff',
-      //            {
-      //                property: 'trips',
-      //                stops: taColorRamp,
-      //            },
       'fill-extrusion-height': {
         property: 'trips',
         type: 'identity'
@@ -3724,6 +3720,14 @@ function updateChart() {
   var chart = document.getElementById("chart");
   if (!chart) return;
 
+  var trips = Math.round(tripTotals[chosenTaz][day][chosenDir]);
+  var title = buildPopupTitle(trips);
+
+  var element = document.getElementById("popup-title");
+  element.innerHTML = title;
+
+  console.log(title);
+
   // fetch the details
   var finalUrl = api_server + 'tnc_trip_stats?taz=eq.' + chosenTaz + '&day_of_week=eq.' + day;
 
@@ -3739,6 +3743,11 @@ function updateChart() {
 
 var popup = null;
 
+function buildPopupTitle(trips) {
+  var title = "<h3 id=\"popup-title\">" + weekdays[day] + " in selected area:<br/>" + trips + " daily " + chosenDir + "</h3>";
+  return title;
+}
+
 function clickedOnTaz(e) {
   chosenTaz = e.features[0].properties.taz;
   var taz = chosenTaz;
@@ -3749,7 +3758,7 @@ function clickedOnTaz(e) {
     return;
   }
 
-  //TODO highlight it
+  // highlight the TAZ
   mymap.setFilter("taz-selected", ["==", "taz", chosenTaz]);
 
   // delete old chart
@@ -3765,10 +3774,11 @@ function clickedOnTaz(e) {
   fetch(finalUrl).then(function (resp) {
     return resp.json();
   }).then(function (jsonData) {
-    var popupText = "<h2>" + trips + " Daily trips</h2>" + "<hr/>" + "<div id=\"chart\" style=\"width: 300px; height:250px;\"></div>";
+    var popupText = buildPopupTitle(trips) + "<hr/>" + "<div id=\"chart\" style=\"width: 300px; height:250px;\"></div>" + "<p text-align=\"right\" class=\"hint\"><i>TAZ Code: " + chosenTaz + "</i></p>";
 
     if (popup) {
-      popup.remove();popup = null;
+      popup.remove();
+      popup = null;
     }
 
     popup = new mapboxgl.Popup({ closeOnClick: true }).setLngLat(e.lngLat).setHTML(popupText).addTo(mymap);
@@ -3795,7 +3805,7 @@ function calculateTripTotals(jsonData) {
     for (var _iterator3 = jsonData[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
       var record = _step3.value;
 
-      var taz = 0 + record.taz;
+      var taz = parseInt(record.taz);
       if (!(taz in totals)) totals[taz] = {};
       totals[taz][record.day_of_week] = record;
 
@@ -3911,6 +3921,7 @@ function pickPickup(thing) {
 
   displayDetails();
   updateColors();
+  updateChart();
   showDailyChart();
 }
 
@@ -3921,6 +3932,7 @@ function pickDropoff(thing) {
 
   displayDetails();
   updateColors();
+  updateChart();
   showDailyChart();
 }
 
@@ -4071,6 +4083,11 @@ function pickTheme(theme) {
   }
 
   queryServer();
+}
+
+function keyPressed(event) {
+  console.log("KEYPRESSED");
+  console.log(event);
 }
 
 var app = new Vue({
