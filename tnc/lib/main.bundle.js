@@ -3411,8 +3411,8 @@ var mymap = new mapboxgl.Map({
   style: 'mapbox://styles/mapbox/light-v9',
   center: [-122.43, 37.78],
   zoom: 12,
-  bearing: -30,
-  pitch: 50,
+  bearing: 0,
+  pitch: 20,
   attributionControl: true,
   logoPosition: 'bottom-left'
 });
@@ -3443,9 +3443,9 @@ var totalDropoffs = [0, 0, 0, 0, 0, 0, 0];
 var PitchToggle = function () {
   function PitchToggle(_ref) {
     var _ref$bearing = _ref.bearing,
-        bearing = _ref$bearing === undefined ? -20 : _ref$bearing,
+        bearing = _ref$bearing === undefined ? 0 : _ref$bearing,
         _ref$pitch = _ref.pitch,
-        pitch = _ref$pitch === undefined ? 50 : _ref$pitch,
+        pitch = _ref$pitch === undefined ? 20 : _ref$pitch,
         _ref$minpitchzoom = _ref.minpitchzoom,
         minpitchzoom = _ref$minpitchzoom === undefined ? null : _ref$minpitchzoom;
 
@@ -3584,8 +3584,8 @@ function addTazLayer(tazs) {
   });
 
   mymap.addLayer({
-    source: 'taz-source',
     id: 'taz',
+    source: 'taz-source',
     type: 'fill-extrusion',
     paint: {
       'fill-extrusion-opacity': 0.8,
@@ -3598,6 +3598,26 @@ function addTazLayer(tazs) {
         type: 'identity'
       }
     }
+  });
+
+  //highlighted TAZ:
+  mymap.addLayer({
+    id: "taz-selected",
+    type: 'fill-extrusion',
+    source: 'taz-source',
+    paint: {
+      'fill-extrusion-opacity': 1.0,
+      'fill-extrusion-color': '#fff',
+      //            {
+      //                property: 'trips',
+      //                stops: taColorRamp,
+      //            },
+      'fill-extrusion-height': {
+        property: 'trips',
+        type: 'identity'
+      }
+    },
+    filter: ["==", "taz", ""]
   });
 
   // make taz hover cursor a pointer so user knows they can click.
@@ -3615,7 +3635,7 @@ function addTazLayer(tazs) {
 
   // Add nav controls
   if (first) {
-    mymap.addControl(new PitchToggle({ bearing: -30, pitch: 50, minpitchzoom: 14 }), 'top-left');
+    mymap.addControl(new PitchToggle({ bearing: 0, pitch: 20, minpitchzoom: 14 }), 'top-left');
     mymap.addControl(new mapboxgl.NavigationControl(), 'top-left');
     first = false;
   }
@@ -3730,6 +3750,7 @@ function clickedOnTaz(e) {
   }
 
   //TODO highlight it
+  mymap.setFilter("taz-selected", ["==", "taz", chosenTaz]);
 
   // delete old chart
   var chart = document.getElementById("chart");
@@ -3850,12 +3871,12 @@ function showDailyChart() {
 
     data.push({ hour: h, pickups: picks, dropoffs: drops });
   }
-  console.log(dailyChart);
 
   if (dailyChart) {
     dailyChart.options.labels = [app.isPickupActive ? 'Pickups' : 'Dropoffs'];
     dailyChart.options.lineColors = [app.isPickupActive ? '#2ac' : '#f42']; //,["#44f","#f66"],
     dailyChart.options.ykeys = [app.isPickupActive ? 'pickups' : 'dropoffs'];
+
     dailyChart.setData(data);
   } else {
     dailyChart = new Morris.Area({

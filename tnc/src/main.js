@@ -25,8 +25,8 @@ let mymap = new mapboxgl.Map({
     style: 'mapbox://styles/mapbox/light-v9',
     center: [-122.43, 37.78],
     zoom: 12,
-    bearing: -30,
-    pitch: 50,
+    bearing: 0,
+    pitch: 20,
     attributionControl: true,
     logoPosition: 'bottom-left',
 });
@@ -75,7 +75,7 @@ let totalDropoffs = [0,0,0,0,0,0,0];
 // PITCH TOGGLE Button
 // See https://github.com/tobinbradley/mapbox-gl-pitch-toggle-control
 export default class PitchToggle {
-    constructor({bearing = -20, pitch = 50, minpitchzoom = null}) {
+    constructor({bearing = 0, pitch = 20, minpitchzoom = null}) {
         this._bearing = bearing;
         this._pitch = pitch;
         this._minpitchzoom = minpitchzoom;
@@ -175,8 +175,8 @@ function addTazLayer(tazs, options={}) {
   });
 
   mymap.addLayer({
-        source: 'taz-source',
         id: 'taz',
+        source: 'taz-source',
         type: 'fill-extrusion',
         paint: {
             'fill-extrusion-opacity':0.8,
@@ -191,6 +191,26 @@ function addTazLayer(tazs, options={}) {
         }
     }
   );
+
+  //highlighted TAZ:
+   mymap.addLayer({
+       id: "taz-selected",
+       type: 'fill-extrusion',
+       source: 'taz-source',
+       paint: {
+            'fill-extrusion-opacity':1.0,
+            'fill-extrusion-color': '#fff',
+//            {
+//                property: 'trips',
+//                stops: taColorRamp,
+//            },
+            'fill-extrusion-height': {
+                property: 'trips',
+                type:'identity',
+            },
+       },
+       filter: ["==", "taz", ""]
+    });
 
   // make taz hover cursor a pointer so user knows they can click.
   mymap.on("mousemove", "taz", function(e) {
@@ -207,7 +227,7 @@ function addTazLayer(tazs, options={}) {
 
   // Add nav controls
   if (first) {
-    mymap.addControl(new PitchToggle({bearing: -30, pitch:50, minpitchzoom:14}), 'top-left');
+    mymap.addControl(new PitchToggle({bearing: 0, pitch:20, minpitchzoom:14}), 'top-left');
     mymap.addControl(new mapboxgl.NavigationControl(), 'top-left');
     first = false;
   }
@@ -302,6 +322,7 @@ function clickedOnTaz(e) {
   }
 
   //TODO highlight it
+  mymap.setFilter("taz-selected", ["==", "taz", chosenTaz]);
 
   // delete old chart
   let chart = document.getElementById("chart");
