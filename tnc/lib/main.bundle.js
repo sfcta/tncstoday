@@ -3369,7 +3369,7 @@ module.exports = self.fetch.bind(self);
 "use strict";
 
 
-// Use npm and babel to support IE11/Safari
+// Must use npm and babel to support IE11/Safari
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -3393,45 +3393,48 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 var theme = "dark";
 
-var api_server = 'http://172.30.1.135/tnc/';
+var api_server = 'http://api/tnc/';
 
 // some important global variables.
-var tripTotals = {};
+var tripTotals = null;
 var day = 0;
-var chosenDir = 'accpt_trips';
-var jsonByDay = { 'avail_trips': {}, 'accpt_trips': {} };
-var tazOfInterest = 0;
+var chosenDir = 'pickups';
+var jsonByDay = { 'dropoffs': {}, 'pickups': {} };
+var chosenTaz = 0;
+var currentChart = null;
+var currentTotal = 0;
 
-var url = 'https://api.mapbox.com/styles/v1/mapbox/' + theme + '-v9/tiles/256/{z}/{x}/{y}?access_token={accessToken}';
-var token = 'pk.eyJ1IjoicHNyYyIsImEiOiJjaXFmc2UxanMwM3F6ZnJtMWp3MjBvZHNrIn0._Dmske9er0ounTbBmdRrRQ';
-var attribution = '<a href="http://openstreetmap.org">OpenStreetMap</a> | ' + '<a href="http://mapbox.com">Mapbox</a>';
-mapboxgl.accessToken = token;
+mapboxgl.accessToken = "pk.eyJ1IjoicHNyYyIsImEiOiJjaXFmc2UxanMwM3F6ZnJtMWp3MjBvZHNrIn0._Dmske9er0ounTbBmdRrRQ";
 
 var mymap = new mapboxgl.Map({
   container: 'sfmap',
-  style: 'mapbox://styles/mapbox/dark-v9',
+  style: 'mapbox://styles/mapbox/light-v9',
   center: [-122.43, 37.78],
   zoom: 12,
-  bearing: 0,
-  pitch: 0,
+  bearing: -30,
+  pitch: 50,
   attributionControl: true,
   logoPosition: 'bottom-left'
 });
 
-var taz_fields = { select: 'taz,geometry' };
-
 // no ubers on the farallon islands (at least, not yet)
 var skipTazs = new Set([384, 385, 313, 305]);
+var weekdays = ['Mondays', 'Tuesdays', 'Wednesdays', 'Thursdays', 'Fridays', 'Saturdays', 'Sundays'];
 
-var dark_styles = { normal: { fillOpacity: 0.8, opacity: 0.0 },
-  selected: { fillOpacity: 0.4, color: "#fff", opacity: 1.0 },
-  popup: { color: "#fff", weight: 5, opacity: 1.0, fillOpacity: 0.8 }
-};
-var styles = dark_styles; // (theme==='dark' ? dark_styles : darklight_styles);
+var colorRamp1 = [[10, '#FBFCBD'], [20, '#FCE3A7'], [30, '#FFCD8F'], [40, '#FFB57D'], [50, '#FF9C6B'], [75, '#FA815F'], [100, '#F5695F'], [125, '#E85462'], [150, '#D6456B'], [175, '#C23C76'], [200, '#AB337D'], [225, '#942B7F'], [250, '#802482'], [300, '#6A1C80'], [350, '#55157D'], [400, '#401073'], [500, '#291057'], [750, '#160D38'], [1000, '#0A081F'], [1800, '#000005']];
 
-var colorStops = [[0, '#208'], [60, '#44c'], [150, '#4a4'], [350, '#ee4'], [700, '#f46'], [1200, '#c00']];
-var totalColors = ['#208', '#44c', '#4a4', '#ee4', '#F46', '#c00'];
-var totalColorCutoffs = [60.0, 150.0, 350.0, 700.0, 1200.0];
+var colorRamp2 = [];
+for (var zz = 2; zz < colorRamp1.length; zz++) {
+  colorRamp2[zz - 2] = [colorRamp1[zz][0], colorRamp1[colorRamp1.length - zz - 1][1]];
+}
+
+var colorRamp3 = [[0, '#208'], [60, '#44c'], [150, '#4a4'], [350, '#ee4'], [700, '#f46'], [1200, '#c00']];
+
+var taColorRamp = colorRamp1;
+
+// totals by day of week
+var totalPickups = [0, 0, 0, 0, 0, 0, 0];
+var totalDropoffs = [0, 0, 0, 0, 0, 0, 0];
 
 // ----------------------------------------------------------------------------
 // PITCH TOGGLE Button
@@ -3465,17 +3468,17 @@ var PitchToggle = function () {
       this._btn['aria-label'] = 'Toggle Pitch';
       this._btn.onclick = function () {
         if (map.getPitch() === 0) {
+          updateColors();
           var options = { pitch: _this._pitch, bearing: _this._bearing };
           if (_this._minpitchzoom && map.getZoom() > _this._minpitchzoom) {
             options.zoom = _this._minpitchzoom;
           }
           map.easeTo(options);
           _this._btn.className = 'mapboxgl-ctrl-icon mapboxgl-ctrl-pitchtoggle-2d';
-          updateColors();
         } else {
+          flattenBuildings();
           map.easeTo({ pitch: 0, bearing: 0 });
           _this._btn.className = 'mapboxgl-ctrl-icon mapboxgl-ctrl-pitchtoggle-3d';
-          flattenBuildings();
         }
       };
       this._container = document.createElement('div');
@@ -3500,10 +3503,10 @@ exports.default = PitchToggle;
 
 function getColor(numTrips) {
   var i = void 0;
-  for (i = 0; i < totalColorCutoffs.length; i++) {
-    if (numTrips < totalColorCutoffs[i]) return totalColors[i];
+  for (i = 0; i < taColorRamp.length; i++) {
+    if (numTrips < taColorRamp[i][0]) return taColorRamp[i][1];
   }
-  return totalColors[i];
+  return taColorRamp[i - 1][1];
 }
 
 // Create one giant GeoJSON layer. This should really be done in PostGIS, but I'm rushing.
@@ -3572,20 +3575,23 @@ function addTazLayer(tazs) {
 
   buildTazDataFromJson(tazs);
 
-  mymap.addSource('taz', {
+  if (mymap.getLayer('taz')) mymap.removeLayer('taz');
+  if (mymap.getSource('taz-source')) mymap.removeSource('taz-source');
+
+  mymap.addSource('taz-source', {
     type: 'geojson',
     data: jsonByDay[chosenDir][day]
   });
 
   mymap.addLayer({
-    source: 'taz',
+    source: 'taz-source',
     id: 'taz',
     type: 'fill-extrusion',
     paint: {
-      'fill-extrusion-opacity': 0.75,
+      'fill-extrusion-opacity': 0.8,
       'fill-extrusion-color': {
         property: 'trips',
-        stops: colorStops
+        stops: taColorRamp
       },
       'fill-extrusion-height': {
         property: 'trips',
@@ -3594,117 +3600,58 @@ function addTazLayer(tazs) {
     }
   });
 
+  // make taz hover cursor a pointer so user knows they can click.
   mymap.on("mousemove", "taz", function (e) {
-    tazOfInterest = e.features[0].properties.taz;
+    mymap.getCanvas().style.cursor = e ? 'pointer' : '-webkit-grab';
   });
 
-  mymap.on("mouseleave", "taz", function () {});
+  mymap.on("mouseleave", "taz", function () {
+    mymap.getCanvas().style.cursor = '-webkit-grab';
+  });
 
   mymap.on("click", "taz", function (e) {
     clickedOnTaz(e);
   });
 
   // Add nav controls
-  mymap.addControl(new PitchToggle({ bearing: -30, pitch: 50, minpitchzoom: 14 }), 'top-left');
-  mymap.addControl(new mapboxgl.NavigationControl(), 'top-left');
+  if (first) {
+    mymap.addControl(new PitchToggle({ bearing: -30, pitch: 50, minpitchzoom: 14 }), 'top-left');
+    mymap.addControl(new mapboxgl.NavigationControl(), 'top-left');
+    first = false;
+  }
 }
 
-function styleByTotalTrips(feature) {
-  return;
-  //let avail_trips = totalTrips[
-  //let shade =
+var first = true;
 
-  return { opacity: 0.0, fillColor: "red", fillOpacity: thing };
-}
-
-function buildChartHtmlFromCmpData(json) {
-
+function buildChartDataFromJson(json) {
   var data = [];
 
   for (var h = 0; h < 24; h++) {
-    var hour = json[h];
-    var picks = Number(hour.accpt_trips);
-    var drops = Number(hour.avail_trips);
+    var record = json[(h + 3) % 24]; // %3 to start at 3AM
+    var hour = Number(record.time.substring(0, 2));
+    var picks = Number(record.pickups);
+    var drops = Number(record.dropoffs);
 
-    data.push({ hour: h, pickups: picks, dropoffs: drops });
+    data.push({ hour: hour, pickups: picks, dropoffs: drops });
   }
-
-  new Morris.Line({
-    // ID of the element in which to draw the chart.
-    element: 'chart',
-    // Chart data records -- each entry in this array corresponds to a point on
-    // the chart.
-    data: data,
-    // The name of the data record attribute that contains x-values.
-    xkey: 'hour',
-    // A list of names of data record attributes that contain y-values.
-    ykeys: ['pickups', 'dropoffs'],
-    // Labels for the ykeys -- will be displayed when you hover over the
-    // chart.
-    labels: ['Pickups', 'Dropoffs'],
-    lineColors: ["#44f", "#f66"],
-    xLabels: "Hour",
-    xLabelAngle: 45,
-    xLabelFormat: dateFmt,
-    //hideHover: 'true',
-    parseTime: false
-  });
+  return data;
 }
 
-function dateFmt(x) {
-  var hourLabels = ['12 AM', '1 AM', '2 AM', '3 AM', '4 AM', '5 AM', '6 AM', '7 AM', '8 AM', '9 AM', '10 AM', '11 AM', 'Noon', '1 PM', '2 PM', '3 PM', '4 PM', '5 PM', '6 PM', '7 PM', '8 PM', '9 PM', '10 PM', '11 PM'];
-  return hourLabels[x.x];
-}
-
-function clickedOnTaz(e) {
-  console.log(e);
-  tazOfInterest = e.features[0].properties.taz;
-  var taz = tazOfInterest;
-
-  var trips = Math.round(tripTotals[taz][day][chosenDir]);
-  if (trips) {
-    app.details = '' + trips + ' Daily trips';
-  } else {
-    return;
-  }
-
-  //TODO highlight it
-
-  // delete old chart
-  var chart = document.getElementById("chart");
-  if (chart) chart.parentNode.removeChild(chart);
-
-  // fetch the CMP details
-  var finalUrl = api_server + 'tnc_trip_stats?taz=eq.' + taz + '&day_of_week=eq.' + day;
-  fetch(finalUrl).then(function (resp) {
-    return resp.json();
-  }).then(function (jsonData) {
-    console.log(jsonData);
-    var popupText = "<h2>" + trips + " Daily trips</h2>" + "<hr/>" + "<div id=\"chart\" style=\"width: 300px; height:250px;\"></div>";
-
-    var popup = new mapboxgl.Popup({ closeOnClick: true }).setLngLat(e.lngLat).setHTML(popupText).addTo(mymap);
-
-    var chartHtml = buildChartHtmlFromCmpData(jsonData);
-  }).catch(function (error) {
-    console.log("err: " + error);
-  });
-}
-
-var esc = encodeURIComponent;
-
-function calculateTripTotals(jsonData) {
-  var totals = [];
+function createChart(data) {
+  // do some weird rounding to get y-axis scale to the 20s
+  var ymax = 0;
   var _iteratorNormalCompletion2 = true;
   var _didIteratorError2 = false;
   var _iteratorError2 = undefined;
 
   try {
-    for (var _iterator2 = jsonData[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-      var record = _step2.value;
+    for (var _iterator2 = data[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+      var entry = _step2.value;
 
-      var taz = 0 + record.taz;
-      if (!(taz in totals)) totals[taz] = {};
-      totals[taz][record.day_of_week] = record;
+      for (var key in entry) {
+        if (key === 'hour') continue;
+        ymax = Math.max(ymax, entry[key]);
+      }
     }
   } catch (err) {
     _didIteratorError2 = true;
@@ -3721,10 +3668,142 @@ function calculateTripTotals(jsonData) {
     }
   }
 
+  var z = Math.round(ymax / 20) * 20 + 20;
+
+  currentChart = new Morris.Line({
+    // ID of the element in which to draw the chart.
+    element: 'chart',
+    data: data,
+    // The name of the data record attribute that contains x-values.
+    xkey: 'hour',
+    // A list of names of data record attributes that contain y-values.
+    ykeys: ['pickups', 'dropoffs'],
+    ymax: z,
+    labels: ['Pickups', 'Dropoffs'],
+    lineColors: ["#44f", "#f66"],
+    xLabels: "Hour",
+    xLabelAngle: 45,
+    xLabelFormat: dateFmt,
+    yLabelFormat: yFmt,
+    hideHover: 'true',
+    parseTime: false
+  });
+}
+
+function yFmt(y) {
+  return Math.round(y).toLocaleString();
+}
+
+function dateFmt(x) {
+  var hourLabels = ['3 AM', '4 AM', '5 AM', '6 AM', '7 AM', '8 AM', '9 AM', '10 AM', '11 AM', 'Noon', '1 PM', '2 PM', '3 PM', '4 PM', '5 PM', '6 PM', '7 PM', '8 PM', '9 PM', '10 PM', '11 PM', '12 AM', '1 AM', '2 AM'];
+  return hourLabels[x.x];
+}
+
+// update the chart when user selects a new day
+function updateChart() {
+  var chart = document.getElementById("chart");
+  if (!chart) return;
+
+  // fetch the details
+  var finalUrl = api_server + 'tnc_trip_stats?taz=eq.' + chosenTaz + '&day_of_week=eq.' + day;
+
+  fetch(finalUrl).then(function (resp) {
+    return resp.json();
+  }).then(function (jsonData) {
+    var data = buildChartDataFromJson(jsonData);
+    if (currentChart) currentChart.setData(data);
+  }).catch(function (error) {
+    console.log("err: " + error);
+  });
+}
+
+var popup = null;
+
+function clickedOnTaz(e) {
+  chosenTaz = e.features[0].properties.taz;
+  var taz = chosenTaz;
+  var trips = Math.round(tripTotals[taz][day][chosenDir]);
+  if (trips) {
+    currentTotal = trips;
+  } else {
+    return;
+  }
+
+  //TODO highlight it
+
+  // delete old chart
+  var chart = document.getElementById("chart");
+  if (chart) {
+    chart.parentNode.removeChild(chart);
+    currentChart = null;
+  }
+
+  // fetch the CMP details
+  var finalUrl = api_server + 'tnc_trip_stats?taz=eq.' + taz + '&day_of_week=eq.' + day;
+
+  fetch(finalUrl).then(function (resp) {
+    return resp.json();
+  }).then(function (jsonData) {
+    var popupText = "<h2>" + trips + " Daily trips</h2>" + "<hr/>" + "<div id=\"chart\" style=\"width: 300px; height:250px;\"></div>";
+
+    if (popup) {
+      popup.remove();popup = null;
+    }
+
+    popup = new mapboxgl.Popup({ closeOnClick: true }).setLngLat(e.lngLat).setHTML(popupText).addTo(mymap);
+
+    var data = buildChartDataFromJson(jsonData);
+    createChart(data);
+  }).catch(function (error) {
+    console.log("err: " + error);
+  });
+}
+
+var esc = encodeURIComponent;
+
+function calculateTripTotals(jsonData) {
+  totalPickups = [0, 0, 0, 0, 0, 0, 0];
+  totalDropoffs = [0, 0, 0, 0, 0, 0, 0];
+
+  var totals = [];
+  var _iteratorNormalCompletion3 = true;
+  var _didIteratorError3 = false;
+  var _iteratorError3 = undefined;
+
+  try {
+    for (var _iterator3 = jsonData[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+      var record = _step3.value;
+
+      var taz = 0 + record.taz;
+      if (!(taz in totals)) totals[taz] = {};
+      totals[taz][record.day_of_week] = record;
+
+      // big sum total, too
+      totalPickups[record.day_of_week] += record.pickups;
+      totalDropoffs[record.day_of_week] += record.dropoffs;
+    }
+  } catch (err) {
+    _didIteratorError3 = true;
+    _iteratorError3 = err;
+  } finally {
+    try {
+      if (!_iteratorNormalCompletion3 && _iterator3.return) {
+        _iterator3.return();
+      }
+    } finally {
+      if (_didIteratorError3) {
+        throw _iteratorError3;
+      }
+    }
+  }
+
+  displayDetails(); // display daily total now that we have it
   return totals;
 }
 
 function fetchTripTotals() {
+  if (tripTotals) return;
+
   var url = api_server + 'taz_total';
 
   fetch(url).then(function (resp) {
@@ -3741,6 +3820,7 @@ function queryServer() {
   var segmentUrl = api_server + 'json_taz?';
 
   // convert option list into a url parameter string
+  var taz_fields = { select: 'taz,geometry' };
   var params = [];
   for (var key in taz_fields) {
     params.push(esc(key) + '=' + esc(taz_fields[key]));
@@ -3750,30 +3830,77 @@ function queryServer() {
   fetch(finalUrl).then(function (resp) {
     return resp.json();
   }).then(function (jsonData) {
-    var personJson = jsonData;
-    addTazLayer(personJson);
-    //colorByLOS(personJson, app.sliderValue);
+    addTazLayer(jsonData);
+    fetchDailyDetails();
   }).catch(function (error) {
     console.log("err: " + error);
   });
 }
 
-var segmentLos = {};
+var dailyChart = null;
+
+function showDailyChart() {
+  var data = [];
+
+  for (var h = 0; h < 24; h++) {
+    var timeper = (h + 3) % 24; // %3 to start at 3AM
+
+    var picks = dailyTotals[day][timeper]['pickups'];
+    var drops = dailyTotals[day][timeper]['dropoffs'];
+
+    data.push({ hour: h, pickups: picks, dropoffs: drops });
+  }
+  console.log(dailyChart);
+
+  if (dailyChart) {
+    dailyChart.options.labels = [app.isPickupActive ? 'Pickups' : 'Dropoffs'];
+    dailyChart.options.lineColors = [app.isPickupActive ? '#2ac' : '#f42']; //,["#44f","#f66"],
+    dailyChart.options.ykeys = [app.isPickupActive ? 'pickups' : 'dropoffs'];
+    dailyChart.setData(data);
+  } else {
+    dailyChart = new Morris.Area({
+      // ID of the element in which to draw the chart.
+      element: 'daily-chart',
+      data: data,
+      // The name of the data record attribute that contains x-values.
+      xkey: 'hour',
+      // A list of names of data record attributes that contain y-values.
+      ykeys: [app.isPickupActive ? 'pickups' : 'dropoffs'],
+      ymax: maxHourlyTrips,
+      labels: [app.isPickupActive ? 'Pickups' : 'Dropoffs'],
+      lineColors: [app.isPickupActive ? '#2ac' : '#f42'], //,["#44f","#f66"],
+      xLabels: "Hour",
+      xLabelAngle: 45,
+      xLabelFormat: dateFmt,
+      yLabelFormat: yFmt,
+      hideHover: 'true',
+      parseTime: false,
+      fillOpacity: 0.4,
+      pointSize: 1,
+      //lineColors: [app.isPickupActive ? '#2ac':'#f42'],
+      behaveLikeLine: true
+    });
+  }
+}
 
 function pickPickup(thing) {
   app.isPickupActive = true;
   app.isDropoffActive = false;
+  chosenDir = 'pickups';
 
-  chosenDir = 'accpt_trips';
+  displayDetails();
   updateColors();
+  showDailyChart();
 }
 
 function pickDropoff(thing) {
   app.isPickupActive = false;
   app.isDropoffActive = true;
+  chosenDir = 'dropoffs';
 
-  chosenDir = 'avail_trips';
+  displayDetails();
   updateColors();
+  showDailyChart();
 }
 
 // SLIDER ----
@@ -3808,24 +3935,121 @@ function sliderChanged(thing) {
   return;
   var newDay = timeSlider.data.indexOf(thing);
   day = parseInt(newDay);
-
   updateColors();
+}
+
+function displayDetails() {
+  var trips = Math.round(app.isPickupActive ? totalPickups[day] : totalDropoffs[day]);
+  trips = Math.round(trips / 100) * 100;
+  var direction = app.isPickupActive ? 'pickups' : 'dropoffs';
+
+  app.details1 = weekdays[day] + ':';
+  app.details2 = trips.toLocaleString() + " citywide " + direction;
 }
 
 function clickDay(chosenDay) {
   day = parseInt(chosenDay);
   app.day = day;
+
+  displayDetails();
   updateColors();
+  updateChart();
+  showDailyChart();
 }
 
 // Update all colors based on trip totals
 function updateColors() {
   mymap.setPaintProperty('taz', 'fill-extrusion-height', { property: 'trips', type: 'identity' });
-  mymap.getSource('taz').setData(jsonByDay[chosenDir][day]);
+  if (mymap.getSource('taz-source')) mymap.getSource('taz-source').setData(jsonByDay[chosenDir][day]);
 }
 
 function flattenBuildings() {
   mymap.setPaintProperty('taz', 'fill-extrusion-height', 0);
+}
+
+var dailyTotals = {};
+var maxHourlyTrips = 0;
+
+function fetchDailyDetails() {
+  var url = api_server + 'tnc_trip_stats?select=taz,day_of_week,time,dropoffs,pickups';
+  fetch(url).then(function (resp) {
+    return resp.json();
+  }).then(function (json) {
+
+    dailyTotals = {};
+    var _iteratorNormalCompletion4 = true;
+    var _didIteratorError4 = false;
+    var _iteratorError4 = undefined;
+
+    try {
+      for (var _iterator4 = json[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+        var record = _step4.value;
+
+        var taz = record.taz;
+        var pickup = record.pickups;
+        var dropoff = record.dropoffs;
+        var _day = record.day_of_week;
+        var time = parseInt(record.time.substring(0, 2));
+
+        if (!dailyTotals[_day]) dailyTotals[_day] = [];
+        if (!dailyTotals[_day][time]) {
+          dailyTotals[_day][time] = {};
+          dailyTotals[_day][time]['dropoffs'] = 0;
+          dailyTotals[_day][time]['pickups'] = 0;
+        }
+
+        dailyTotals[_day][time]['dropoffs'] += dropoff;
+        dailyTotals[_day][time]['pickups'] += pickup;
+        maxHourlyTrips = Math.max(maxHourlyTrips, dailyTotals[_day][time]['dropoffs'], dailyTotals[_day][time]['pickups']);
+      }
+    } catch (err) {
+      _didIteratorError4 = true;
+      _iteratorError4 = err;
+    } finally {
+      try {
+        if (!_iteratorNormalCompletion4 && _iterator4.return) {
+          _iterator4.return();
+        }
+      } finally {
+        if (_didIteratorError4) {
+          throw _iteratorError4;
+        }
+      }
+    }
+
+    showDailyChart();
+  }).catch(function (error) {
+    console.log("err: " + error);
+  });
+
+  maxHourlyTrips = 20000; //Math.round(maxHourlyTrips/500)*500;
+  return dailyTotals;
+}
+
+function pickTheme(theme) {
+  if (mymap.getLayer('taz')) mymap.removeLayer('taz');
+  if (mymap.getSource('taz-source')) mymap.removeSource('taz-source');
+  if (popup) popup.remove();
+
+  // delete old chart
+  var chart = document.getElementById("chart");
+  if (chart) {
+    chart.parentNode.removeChild(chart);
+    currentChart = null;
+  }
+
+  if (theme == 1) {
+    taColorRamp = colorRamp1;
+    mymap.setStyle('mapbox://styles/mapbox/light-v9');
+  } else if (theme == 2) {
+    taColorRamp = colorRamp2;
+    mymap.setStyle('mapbox://styles/mapbox/dark-v9');
+  } else {
+    taColorRamp = colorRamp3;
+    mymap.setStyle('mapbox://styles/mapbox/dark-v9');
+  }
+
+  queryServer();
 }
 
 var app = new Vue({
@@ -3836,13 +4060,15 @@ var app = new Vue({
     sliderValue: 2015,
     timeSlider: timeSlider,
     day: 0,
-    days: ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Saturday', 'Sunday'],
-    details: ""
+    days: ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'],
+    details1: '',
+    details2: ''
   },
   methods: {
     pickPickup: pickPickup,
     pickDropoff: pickDropoff,
-    clickDay: clickDay
+    clickDay: clickDay,
+    pickTheme: pickTheme
   },
   watch: {
     sliderValue: sliderChanged
