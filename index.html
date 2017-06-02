@@ -48,7 +48,7 @@
                 <button v-for="(item, index) in days"
                         @click="clickDay(index)"
                         class="mini ui inverted button"
-                        v-bind:class="{ active: index==day, blue: index <5, red: index >= 5 }"
+                        v-bind:class="{ active: index==day, violet: index <5, purple: index >= 5 }"
                         v-bind:class="">{{item}}
                 </button>
                 <div id="sliderpanel">
