@@ -404,7 +404,12 @@ function showDailyChart() {
   }
 
   if (dailyChart) {
+    dailyChart.options.labels = [ app.isPickupActive ? 'Pickups':'Dropoffs'];
+    dailyChart.options.lineColors = [app.isPickupActive ? '#2ac':'#f42']; //,["#44f","#f66"],
+    dailyChart.options.ykeys = [app.isPickupActive ? 'pickups': 'dropoffs'];
+
     dailyChart.setData(data);
+
   } else {
     dailyChart = new Morris.Area({
       // ID of the element in which to draw the chart.
@@ -413,10 +418,10 @@ function showDailyChart() {
       // The name of the data record attribute that contains x-values.
       xkey: 'hour',
       // A list of names of data record attributes that contain y-values.
-      ykeys: ['pickups', 'dropoffs'],
+      ykeys: [app.isPickupActive ? 'pickups': 'dropoffs'],
       ymax: maxHourlyTrips,
-      labels: ['Pickups', 'Dropoffs'],
-      lineColors: ["#44f","#f66"],
+      labels: [ app.isPickupActive ? 'Pickups':'Dropoffs'],
+      lineColors: [app.isPickupActive ? '#2ac':'#f42'],//,["#44f","#f66"],
       xLabels: "Hour",
       xLabelAngle: 45,
       xLabelFormat: dateFmt,
@@ -425,7 +430,7 @@ function showDailyChart() {
       parseTime: false,
       fillOpacity: 0.4,
       pointSize: 1,
-      lineColors: ['#2ac','#f42'],
+      //lineColors: [app.isPickupActive ? '#2ac':'#f42'],
       behaveLikeLine: true,
     });
   }
@@ -438,6 +443,7 @@ function pickPickup(thing) {
 
   displayDetails();
   updateColors();
+  showDailyChart();
 }
 
 function pickDropoff(thing) {
@@ -447,6 +453,7 @@ function pickDropoff(thing) {
 
   displayDetails();
   updateColors();
+  showDailyChart();
 }
 
 // SLIDER ----
