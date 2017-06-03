@@ -206,7 +206,7 @@ function addTazLayer(tazs, options={}) {
             },
        },
        filter: ["==", "taz", ""]
-    });
+   });
 
   // make taz hover cursor a pointer so user knows they can click.
   mymap.on("mousemove", "taz", function(e) {
@@ -278,13 +278,14 @@ function createChart(data) {
 
 function yFmt(y) { return Math.round(y).toLocaleString() }
 
-function dateFmt(x) {
-  const hourLabels = ['3 AM','4 AM','5 AM','6 AM','7 AM',
+const hourLabels = ['3 AM','4 AM','5 AM','6 AM','7 AM',
                   '8 AM','9 AM','10 AM','11 AM',
                   'Noon','1 PM','2 PM','3 PM',
                   '4 PM','5 PM','6 PM','7 PM',
                   '8 PM','9 PM','10 PM','11 PM',
                   '12 AM','1 AM','2 AM'];
+
+function dateFmt(x) {
   return hourLabels[x.x];
 }
 
@@ -496,37 +497,50 @@ function pickDropoff(thing) {
 
 // SLIDER ----
 let timeSlider = {
-          data: [[...Array(24).keys()]],
-					disabled: true,
-          sliderValue: "Mon",
+          data: ['','3AM','','','6AM','','','9AM','','','Noon','','','3PM','','','6PM','','','9PM','','','12AM','',''],
+					disabled: false,
+          sliderValue: '6PM',
 					width: 'auto',
 					height: 6,
 					direction: 'horizontal',
-					dotSize: 16,
+					dotSize: 12,
 					eventType: 'auto',
 					show: true,
 					realTime: false,
-					tooltip: 'always',
+					tooltip: false,
 					clickable: true,
 					tooltipDir: 'bottom',
-					piecewise: false,
-          piecewiseLabel: false,
+					piecewise: true,
+          piecewiseLabel: true,
 					lazy: false,
 					reverse: false,
-          labelActiveStyle: {  "color": "#fff"},
           piecewiseStyle: {
-            "backgroundColor": "#fff",
+            "backgroundColor": "#ccc",
             "visibility": "visible",
-            "width": "14px",
-            "height": "14px"
+            "width": "1px",
+            "height": "1px"
           },
+          piecewiseActiveStyle: {
+            "backgroundColor": "#ccc",
+            "visibility": "visible",
+            "width": "4px",
+            "height": "4px"
+          },
+          labelStyle: {  "color": "#ccc"},
+          labelActiveStyle: {  "color": "#ccc"},
+          processStyle: {
+            "backgroundColor": "#ffc"
+          }
 };
 
 function sliderChanged(thing) {
-  return;
-  let newDay = timeSlider.data.indexOf(thing);
-  day = parseInt(newDay);
-  updateColors();
+  console.log(thing);
+
+  let newDay = app.timeSlider.data.indexOf(thing);
+
+  app.isAllDay = newDay==0;
+  //day = parseInt(newDay);
+  //updateColors();
 }
 
 function displayDetails() {
@@ -624,25 +638,32 @@ function pickTheme(theme) {
   queryServer();
 }
 
+function clickAllDay(e) {
+  console.log(e);
+  console.log(app.timeSlider);
+  app.sliderValue = '';
+}
 
 let app = new Vue({
   el: '#panel',
   data: {
     isPickupActive: true,
     isDropoffActive: false,
-    sliderValue: 2015,
+    sliderValue: '6AM',
     timeSlider: timeSlider,
     day: 0,
     days: ['Mo','Tu','We','Th','Fr','Sa','Su'],
     details1: '',
     details2: '',
     nowMoloading: true,
+    isAllDay: true,
   },
   methods: {
     pickPickup: pickPickup,
     pickDropoff: pickDropoff,
     clickDay: clickDay,
     pickTheme: pickTheme,
+    clickAllDay: clickAllDay,
   },
   watch: {
     sliderValue: sliderChanged,

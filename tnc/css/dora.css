@@ -76,10 +76,10 @@ p.hint {color:#888; text-align:right; margin-right:25px;}
 }
 
 #sliderpanel {
-  display:none;
-  margin-left:200px;
-  width:300px;
+  display: block;
 }
+
+.vue-slider-wrap {margin-left:20px;}
 
 #picker { width:100%; margin-right:20px;}
 
