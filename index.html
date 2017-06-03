@@ -54,11 +54,19 @@
                         v-bind:class="{ active: index==day, green: index <5, yellow: index >= 5 }"
                         v-bind:class="">{{item}}
                 </button>
-                <div id="sliderpanel">
-                    <button class="mini ui inverted active red button">All Day</button>
 
-                    <vue-slider v-bind="timeSlider" v-model="sliderValue"></vue-slider>
-                </div>
+                <br/>
+                <br/>
+                <hr/>
+                <h5>CHOOSE TIME OF DAY:</h5>
+                <table width="100%" id="sliderpanel"><tr width="100%">
+                  <td width="20%"><button @click="clickAllDay"
+                                          class="mini ui inverted violet button"
+                                          v-bind:class="{active: isAllDay}">
+                                          All Day</button></td>
+                  <td width="80%"><vue-slider v-bind="timeSlider" v-model="sliderValue"></vue-slider></td>
+                </tr></table>
+
                 <div id="stats-loader" class="ui loader" v-bind:class="{active: nowMoloading}"></div>
                 <div id="stats-panel">
                   <br/>
