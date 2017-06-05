@@ -13,10 +13,12 @@ let api_server = 'http://api/tnc/';
 let tripTotals = null;
 let day = 0;
 let chosenDir = 'pickups';
+let cachedHourlyData = {};
 let jsonByDay = {'dropoffs':{}, 'pickups':{} };
 let chosenTaz = 0;
 let currentChart = null;
 let currentTotal = 0;
+let cachedTazData = null;
 
 mapboxgl.accessToken = "pk.eyJ1IjoicHNyYyIsImEiOiJjaXFmc2UxanMwM3F6ZnJtMWp3MjBvZHNrIn0._Dmske9er0ounTbBmdRrRQ";
 
@@ -151,13 +153,14 @@ function buildTazDataFromJson(tazs, options) {
             if (!shade) shade = '#222';
         }
         json['properties'] = {
-            taz: 0+taz.taz,
+            taz: taz.taz,
             shade: shade,
             trips: numTrips,
         }
         fulljson['features'].push(json);
       }
       jsonByDay[direction][d] = fulljson;
+      cachedTazData = fulljson;
     }
   }
   return jsonByDay;
@@ -497,13 +500,13 @@ function pickDropoff(thing) {
 
 // SLIDER ----
 let timeSlider = {
-          data: ['','3AM','','','6AM','','','9AM','','','Noon','','','3PM','','','6PM','','','9PM','','','12AM','',''],
-					disabled: false,
-          sliderValue: '6PM',
+          min: 0,
+          max: 24,
+          disabled: true,
 					width: 'auto',
 					height: 6,
 					direction: 'horizontal',
-					dotSize: 12,
+					dotSize: 14,
 					eventType: 'auto',
 					show: true,
 					realTime: false,
@@ -514,11 +517,12 @@ let timeSlider = {
           piecewiseLabel: true,
 					lazy: false,
 					reverse: false,
+          speed: 0.25,
           piecewiseStyle: {
             "backgroundColor": "#ccc",
             "visibility": "visible",
-            "width": "1px",
-            "height": "1px"
+            "width": "4px",
+            "height": "4px"
           },
           piecewiseActiveStyle: {
             "backgroundColor": "#ccc",
@@ -530,18 +534,46 @@ let timeSlider = {
           labelActiveStyle: {  "color": "#ccc"},
           processStyle: {
             "backgroundColor": "#ffc"
-          }
+          },
+          formatter: function(index) {
+            let hideLabel = [index-1] % 3;
+            return hideLabel ? '' : hourLabels[index-1];
+          },
+          style: {"marginRight":"0px"},
 };
 
-function sliderChanged(thing) {
-  console.log(thing);
+function sliderChanged(index) {
+  app.isAllDay = (index==0);
 
-  let newDay = app.timeSlider.data.indexOf(thing);
-
-  app.isAllDay = newDay==0;
-  //day = parseInt(newDay);
+  console.log('hereee');
+  switchToHourlyView(index);
   //updateColors();
 }
+
+function switchToHourlyView(index) {
+  let hourData = loadHourlyData(index);  // -1 because all-day is zero.
+  mymap.getSource('taz-source').setData(hourData);
+}
+
+// update map with values for specific hour
+function loadHourlyData(hour) {
+  for (let item of cachedTazData.features) {
+
+    let taz = item.properties.taz;
+
+    let trips = cachedHourlyData[day][hour][chosenDir][taz];
+    let shade = getColor(trips);
+    if (!shade) shade = '#444';
+
+    item.properties = {
+        taz: taz,
+        shade: shade,
+        trips: trips,
+    }
+  }
+  return cachedTazData;
+}
+
 
 function displayDetails() {
   let trips = Math.round(app.isPickupActive ? totalPickups[day] : totalDropoffs[day]);
@@ -566,7 +598,12 @@ function clickDay(chosenDay) {
 function updateColors() {
   mymap.setPaintProperty('taz','fill-extrusion-height',
     {property: 'trips',type:'identity'});
-  if (mymap.getSource('taz-source')) mymap.getSource('taz-source').setData(jsonByDay[chosenDir][day]);
+
+  if (app.sliderValue==0) {
+    mymap.getSource('taz-source').setData(jsonByDay[chosenDir][day]);
+  } else {
+    switchToHourlyView(app.sliderValue);
+  }
 }
 
 function flattenBuildings() {
@@ -588,27 +625,44 @@ function fetchDailyDetails() {
       let day = record.day_of_week;
       let time = parseInt(record.time.substring(0,2));
 
+      let time_index = (time+24-3) % 24 + 1
+
       if (!dailyTotals[day]) dailyTotals[day] = [];
+
+      if (!cachedHourlyData[day]) cachedHourlyData[day] = [];
+      if (!cachedHourlyData[day][time_index]) cachedHourlyData[day][time_index] = {'dropoffs':{}, 'pickups':{}};
+      if (!cachedHourlyData[day][0]) cachedHourlyData[day][0] = {'dropoffs':{}, 'pickups':{}};
+      if (!cachedHourlyData[day][0]['dropoffs'][taz]) {
+        cachedHourlyData[day][0]['dropoffs'][taz] = 0;
+        cachedHourlyData[day][0]['pickups'][taz] = 0;
+      }
+
       if (!dailyTotals[day][time]) {
         dailyTotals[day][time] = {};
         dailyTotals[day][time]['dropoffs'] = 0;
         dailyTotals[day][time]['pickups'] = 0;
       }
 
+      // save values -- using 3hr index offset
+      cachedHourlyData[day][time_index]['dropoffs'][taz] = 3*dropoff;  // 3*cheating to make colors pop
+      cachedHourlyData[day][time_index]['pickups'][taz] = 3*pickup;
+
+      // save summary daily values
       dailyTotals[day][time]['dropoffs'] += dropoff;
       dailyTotals[day][time]['pickups'] += pickup;
-      maxHourlyTrips = Math.max(maxHourlyTrips,
-                                dailyTotals[day][time]['dropoffs'],
-                                dailyTotals[day][time]['pickups']
-      );
+      cachedHourlyData[day][0]['dropoffs'][taz] += dropoff;
+      cachedHourlyData[day][0]['pickups'][taz] += pickup;
     }
+    console.log(cachedHourlyData);
+
     showDailyChart();
+    app.timeSlider.disabled = false;
 
   }).catch(function(error) {
     console.log("err: "+error);
   });
 
-  maxHourlyTrips = 20000; //Math.round(maxHourlyTrips/500)*500;
+  maxHourlyTrips = 20000;
   return dailyTotals;
 }
 
@@ -639,9 +693,7 @@ function pickTheme(theme) {
 }
 
 function clickAllDay(e) {
-  console.log(e);
-  console.log(app.timeSlider);
-  app.sliderValue = '';
+  app.sliderValue = 0;
 }
 
 let app = new Vue({
@@ -649,7 +701,7 @@ let app = new Vue({
   data: {
     isPickupActive: true,
     isDropoffActive: false,
-    sliderValue: '6AM',
+    sliderValue: 0,
     timeSlider: timeSlider,
     day: 0,
     days: ['Mo','Tu','We','Th','Fr','Sa','Su'],
