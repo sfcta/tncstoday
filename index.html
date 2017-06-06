@@ -38,15 +38,15 @@
             <h3>TNC'S TODAY &raquo;&raquo; DATA EXPLORER</h3>
             <hr/>
             <div id="picker">
-                <h5>CHOOSE DIRECTION:</h5>
+                <br/>
+                <h5>DIRECTION:</h5>
                 <button @click="pickPickup" v-bind:class="{ active: isPickupActive }"
                          class="mini ui inverted blue button">Pick-ups</button>
                 <button @click="pickDropoff" v-bind:class="{ active: isDropoffActive }"
                          class="mini ui inverted red button">Drop-offs</button>
                 <br/>
                 <br/>
-                <hr/>
-                <h5>CHOOSE DAY OF WEEK:</h5>
+                <h5>DAY OF WEEK:</h5>
                 <button v-for="(item, index) in days"
                         @click="clickDay(index)"
                         class="mini ui inverted button"
@@ -54,28 +54,23 @@
                         v-bind:class="">{{item}}
                 </button>
 
-                <br/>
-                <br/>
-                <hr/>
-                <h5>CHOOSE TIME OF DAY:</h5>
-                <table width="100%" id="sliderpanel"><tr width="100%">
-                  <td width="20%"><button @click="clickAllDay"
-                                          class="mini ui inverted violet button"
-                                          v-bind:class="{active: isAllDay}">
-                                          All Day</button></td>
-                  <td width="80%"><vue-slider v-bind="timeSlider" v-model="sliderValue"></vue-slider></td>
-                </tr></table>
+                <div id="stats-panel" class="ui">
+                  <div id="stats-loader" class="ui loader" v-bind:class="{active: nowMoloading}"></div>
 
-                <div id="stats-loader" class="ui loader" v-bind:class="{active: nowMoloading}"></div>
-                <div id="stats-panel">
                   <br/>
                   <br/>
                   <hr/>
                   <h1>{{details1}}<br/>
                       {{details2}}</h1>
+                  <h5>&nbsp;TIME OF DAY:</h5>
                   <div id="daily-chart"></div>
+                  <vue-slider v-bind="timeSlider" v-model="sliderValue"></vue-slider>
+                  <br/>
+                  <button @click="clickAllDay" style="display:none;"
+                                          class="mini ui inverted violet button"
+                                          v-bind:class="{active: isAllDay}">
+                                          All Day</button>
                 </div>
-
             </div>
           </div>
           <div id="color-panel">

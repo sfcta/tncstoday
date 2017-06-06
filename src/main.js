@@ -463,14 +463,16 @@ function showDailyChart() {
       labels: [ app.isPickupActive ? 'Pickups':'Dropoffs'],
       lineColors: [day < 5 ? '#1fc231':'#ffe21f'],
       xLabels: "Hour",
-      xLabelAngle: 45,
+      xLabelAngle: 60,
       xLabelFormat: dateFmt,
       yLabelFormat: yFmt,
-      hideHover: 'true',
+      hideHover: true,
       parseTime: false,
       fillOpacity: 0.4,
       pointSize: 1,
       behaveLikeLine: true,
+      eventStrokeWidth: 2,
+      eventLineColors: ['#ccc'],
     });
   }
 }
@@ -503,31 +505,31 @@ let timeSlider = {
           max: 24,
           disabled: true,
 					width: 'auto',
-					height: 6,
+					height: 3,
 					direction: 'horizontal',
-					dotSize: 14,
+					dotSize: 16,
 					eventType: 'auto',
 					show: true,
 					realTime: false,
-					tooltip: false,
+					tooltip: 'always',
 					clickable: true,
 					tooltipDir: 'bottom',
 					piecewise: true,
-          piecewiseLabel: true,
+          piecewiseLabel: false,
 					lazy: false,
 					reverse: false,
           speed: 0.25,
           piecewiseStyle: {
             "backgroundColor": "#ccc",
             "visibility": "visible",
-            "width": "4px",
-            "height": "4px"
+            "width": "6px",
+            "height": "6px"
           },
           piecewiseActiveStyle: {
             "backgroundColor": "#ccc",
             "visibility": "visible",
-            "width": "4px",
-            "height": "4px"
+            "width": "6px",
+            "height": "6px"
           },
           labelStyle: {  "color": "#ccc"},
           labelActiveStyle: {  "color": "#ccc"},
@@ -535,14 +537,16 @@ let timeSlider = {
             "backgroundColor": "#ffc"
           },
           formatter: function(index) {
-            let hideLabel = [index-1] % 3;
-            return hideLabel ? '' : hourLabels[index-1];
+            return (index==0 ? 'All Day >>' : hourLabels[index-1]);
           },
-          style: {"marginRight":"0px"},
+          style: {"marginTop":"-20px","marginBottom":"30px","marginLeft":"46px","marginRight":"18px"},
 };
 
 function sliderChanged(index) {
   app.isAllDay = (index==0);
+
+  dailyChart.options.events = (index ? [index-1] : []);
+  showDailyChart();
 
   switchToHourlyView(index);
 }
@@ -642,7 +646,7 @@ function fetchDailyDetails() {
       }
 
       // save values -- using 3hr index offset
-      cachedHourlyData[day][time_index]['dropoffs'][taz] = 8*dropoff;  // 3*cheating to make colors pop
+      cachedHourlyData[day][time_index]['dropoffs'][taz] = 8*dropoff;  // 8*cheating to make colors pop
       cachedHourlyData[day][time_index]['pickups'][taz] = 8*pickup;
 
       // save summary daily values
@@ -683,7 +687,7 @@ function pickTheme(theme) {
     mymap.setStyle('mapbox://styles/mapbox/dark-v9');
   } else {
     taColorRamp = colorRamp3;
-    mymap.setStyle('mapbox://styles/mapbox/dark-v9');
+    mymap.setStyle('mapbox://styles/mapbox/light-v9');
   }
 
   queryServer();
@@ -721,7 +725,7 @@ let app = new Vue({
     getSliderValue: _.debounce(
       function() {
         sliderChanged(this.sliderValue);
-      }, 75
+      }, 30
     ),
   },
   components: {
