@@ -4,6 +4,7 @@
 import 'babel-polyfill';
 import 'isomorphic-fetch';
 import vueSlider from 'vue-slider-component';
+import 'lodash';
 
 let theme = "dark";
 
@@ -303,8 +304,6 @@ function updateChart() {
   let element = document.getElementById("popup-title");
   element.innerHTML = title;
 
-  console.log(title);
-
   // fetch the details
   let finalUrl = api_server + 'tnc_trip_stats?taz=eq.' + chosenTaz
                             + '&day_of_week=eq.' + day
@@ -545,13 +544,11 @@ let timeSlider = {
 function sliderChanged(index) {
   app.isAllDay = (index==0);
 
-  console.log('hereee');
   switchToHourlyView(index);
-  //updateColors();
 }
 
 function switchToHourlyView(index) {
-  let hourData = loadHourlyData(index);  // -1 because all-day is zero.
+  let hourData = loadHourlyData(index);
   mymap.getSource('taz-source').setData(hourData);
 }
 
@@ -617,6 +614,7 @@ function fetchDailyDetails() {
   const url = api_server + 'tnc_trip_stats?select=taz,day_of_week,time,dropoffs,pickups';
   fetch(url).then((resp) => resp.json()).then(function(json) {
 
+    cachedHourlyData = {};
     dailyTotals = {};
     for (let record of json) {
       let taz = record.taz;
@@ -644,8 +642,8 @@ function fetchDailyDetails() {
       }
 
       // save values -- using 3hr index offset
-      cachedHourlyData[day][time_index]['dropoffs'][taz] = 3*dropoff;  // 3*cheating to make colors pop
-      cachedHourlyData[day][time_index]['pickups'][taz] = 3*pickup;
+      cachedHourlyData[day][time_index]['dropoffs'][taz] = 8*dropoff;  // 3*cheating to make colors pop
+      cachedHourlyData[day][time_index]['pickups'][taz] = 8*pickup;
 
       // save summary daily values
       dailyTotals[day][time]['dropoffs'] += dropoff;
@@ -653,7 +651,6 @@ function fetchDailyDetails() {
       cachedHourlyData[day][0]['dropoffs'][taz] += dropoff;
       cachedHourlyData[day][0]['pickups'][taz] += pickup;
     }
-    console.log(cachedHourlyData);
 
     showDailyChart();
     app.timeSlider.disabled = false;
@@ -710,15 +707,22 @@ let app = new Vue({
     nowMoloading: true,
     isAllDay: true,
   },
+  watch: {
+    sliderValue: function(value) {
+      this.getSliderValue();
+    }
+  },
   methods: {
     pickPickup: pickPickup,
     pickDropoff: pickDropoff,
     clickDay: clickDay,
     pickTheme: pickTheme,
     clickAllDay: clickAllDay,
-  },
-  watch: {
-    sliderValue: sliderChanged,
+    getSliderValue: _.debounce(
+      function() {
+        sliderChanged(this.sliderValue);
+      }, 75
+    ),
   },
   components: {
     vueSlider,
