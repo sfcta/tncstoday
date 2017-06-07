@@ -595,6 +595,11 @@ function clickDay(chosenDay) {
   showDailyChart();
 }
 
+function clickHideHelp() {
+  console.log("hide");
+  helpPanel.showHelp = !helpPanel.showHelp;
+}
+
 // Update all colors based on trip totals
 function updateColors() {
   mymap.setPaintProperty('taz','fill-extrusion-height',
@@ -693,9 +698,6 @@ function pickTheme(theme) {
   queryServer();
 }
 
-function clickAllDay(e) {
-  app.sliderValue = 0;
-}
 
 let app = new Vue({
   el: '#panel',
@@ -720,8 +722,8 @@ let app = new Vue({
     pickPickup: pickPickup,
     pickDropoff: pickDropoff,
     clickDay: clickDay,
+    clickHideHelp: clickHideHelp,
     pickTheme: pickTheme,
-    clickAllDay: clickAllDay,
     getSliderValue: _.debounce(
       function() {
         sliderChanged(this.sliderValue);
@@ -731,6 +733,16 @@ let app = new Vue({
   components: {
     vueSlider,
   }
+});
+
+let helpPanel = new Vue({
+  el: '#helpbox',
+  data: {
+    showHelp: true,
+  },
+  methods: {
+    clickHideHelp: clickHideHelp,
+  },
 });
 
 fetchTripTotals();

@@ -35,8 +35,14 @@
 
       <div id="panel">
           <div class="dashboard">
-            <h3>TNC'S TODAY &raquo;&raquo; DATA EXPLORER</h3>
-			<br/>
+            <h3 class="apptitle">TNC'S TODAY &nbsp;&bull;&nbsp; DATA EXPLORER</h3>
+            <div class="moreinfo">
+              <a href="#" @click="clickHideHelp">What is this?</a>
+              &nbsp;&nbsp;&nbsp;&bull;&nbsp;&nbsp;&nbsp;
+              <a target="_blank" href="http://www.sfcta.org/tncstoday">Learn more&hellip;</a>
+              <!--&nbsp;&nbsp;&nbsp;&bull;&nbsp;&nbsp;&nbsp;
+              <a target="_blank" href="http://www.sfcta.org/tncstoday">Share</a> -->
+            </div>
             <hr/>
             <div id="picker">
                 <h5>CHOOSE DIRECTION:</h5>
@@ -50,8 +56,8 @@
                 <button v-for="(item, index) in days"
                         @click="clickDay(index)"
                         class="mini ui inverted button"
-                        v-bind:class="{ active: index==day, green: index <5, yellow: index >= 5 }"
-                        v-bind:class="">{{item}}
+                        v-bind:class="{ active: index==day, green: index <5, yellow: index >= 5 }">
+                        {{item}}
                 </button>
 
                 <div id="stats-panel" class="ui">
@@ -65,41 +71,37 @@
                   <div id="daily-chart"></div>
                   <vue-slider v-bind="timeSlider" v-model="sliderValue"></vue-slider>
                   <br/>
-                  <button @click="clickAllDay" style="display:none;"
-                                          class="mini ui inverted violet button"
-                                          v-bind:class="{active: isAllDay}">
-                                          All Day</button>
                 </div>
             </div>
           </div>
 
           <div class="logo">
             <hr/>
-			<div class="moreinfo">
-			  <a target="_blank" href="http://www.sfcta.org/tncstoday">Learn more about TNCs&hellip;</a>
-			</div>
             <table id="table-logo"><tr>
               <td><h4 class="agency"><b><a target="_blank" href="http://www.sfcta.org/tncstoday">SAN FRANCISCO COUNTY TRANSPORTATION AUTHORITY</a></b></h4></td>
-			  <td><a class="agency-link" target="_blank" href="http://www.sfcta.org/tncstoday"><img src="/sfcta-logo.png" width=75 height=75 ></img></a></td></tr>
+              <td><a class="agency-link" target="_blank" href="http://www.sfcta.org/tncstoday"><img src="/sfcta-logo.png" width=75 height=75 ></img></a></td></tr>
             </table>
           </div>
+
       </div>
       <div id="sfmap"></div>
-      <div id="helpbox" class="ui segment">
-        <hr/><h2 style="margin-top:0px; margin-bottom:10px;">What am I looking at?</h2>
-        You're looking at the number of combined Uber and Lyft trips taken inside San Francisco&mdash;by location, and by time of day:
-		<ul>
-		<li>Uber and Lyft trips are combined and cannot be separated.</li>
-		<li>Only rides that are <i>entirely within the city limits</i> are counted.
-		<li>Data was collected over many weeks in fall 2016 and then averaged.</li>
-		<li>No personal data is shown. Pickup/dropoff locations are merged by city block downtown, and by larger areas further out.</li>
-		<li>Every effort has been made to ensure this data is accurate, but SFCTA cannot verify its correctness without outside assistance.</li>
-		</ul>
-		<div style="float:right"><button class="small ui green button">GOT IT</button></div>
-	  </div>
-
+       <transition name="fade">
+        <div id="helpbox" v-if="showHelp" class="ui segment">
+            <hr/><h2 style="margin-top:0px; margin-bottom:10px;">TNCs Today&hellip; what is this?</h2>
+            You're looking at the number of combined Uber and Lyft trips taken inside San Francisco&mdash;by location and by time of day.
+            <ul>
+            <li>Uber and Lyft trips are combined and cannot be separated.</li>
+            <li>Only rides that are <i>entirely within the city limits</i> are counted.
+            <li>Data was collected over many weeks in fall 2016 and then averaged.</li>
+            <li>No personal data is shown. Pickup/dropoff locations are merged by city block downtown, and by larger areas farther out.</li>
+            <li>Every effort has been made to ensure this data is accurate, but SFCTA cannot verify its correctness without outside assistance.</li>
+            </ul>
+            <div style="float:right">
+              <button @click="clickHideHelp" class="small ui green button">GOT IT</button>
+            </div>
+         </div>
+       </transition>
     </div>
-
     <script type="application/javascript" src="lib/main.bundle.js"></script>
   </body>
 </html>
