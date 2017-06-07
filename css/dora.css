@@ -22,6 +22,17 @@ hr {margin-bottom:0px;}
   vertical-align:center;
   margin-left:10px;
   margin-right:10px;
+  margin-bottom:10px;
+}
+
+.moreinfo {
+text-align:center;
+margin-bottom:-10px;
+}
+
+#helpbox {
+	position: relative; width: 500px; height: 360px; margin-top:-400px;
+    margin-left:40px;
 }
 
 #table-logo {margin-top:5px;}

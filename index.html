@@ -36,6 +36,7 @@
       <div id="panel">
           <div class="dashboard">
             <h3>TNC'S TODAY &raquo;&raquo; DATA EXPLORER</h3>
+			<br/>
             <hr/>
             <div id="picker">
                 <h5>CHOOSE DIRECTION:</h5>
@@ -71,20 +72,32 @@
                 </div>
             </div>
           </div>
-          <div id="color-panel">
-            <img class="colors" src="/light.jpg" width="35" @click="pickTheme(1)" title="Pick a color theme!"></img>
-            <img class="colors" src="/dark.jpg"  width="35" @click="pickTheme(2)" title="Pick a color theme!"></img>
-            <img class="colors" src="/neon.jpg"  width="35" @click="pickTheme(3)" title="Pick a color theme!"></img>
-          </div>
+
           <div class="logo">
             <hr/>
+			<div class="moreinfo">
+			  <a target="_blank" href="http://www.sfcta.org/tncstoday">Learn more about TNCs&hellip;</a>
+			</div>
             <table id="table-logo"><tr>
-              <td><h4 class="agency"><b><a target="_blank" href="http://www.sfcta.org">SAN FRANCISCO COUNTY TRANSPORTATION AUTHORITY</a></b></h4></td>
-			  <td><a class="agency-link" target="_blank" href="http://www.sfcta.org"><img src="/sfcta-logo.png" width=75 height=75 ></img></a></td></tr>
+              <td><h4 class="agency"><b><a target="_blank" href="http://www.sfcta.org/tncstoday">SAN FRANCISCO COUNTY TRANSPORTATION AUTHORITY</a></b></h4></td>
+			  <td><a class="agency-link" target="_blank" href="http://www.sfcta.org/tncstoday"><img src="/sfcta-logo.png" width=75 height=75 ></img></a></td></tr>
             </table>
           </div>
       </div>
       <div id="sfmap"></div>
+      <div id="helpbox" class="ui segment">
+        <hr/><h2 style="margin-top:0px; margin-bottom:10px;">What am I looking at?</h2>
+        You're looking at the number of combined Uber and Lyft trips taken inside San Francisco&mdash;by location, and by time of day:
+		<ul>
+		<li>Uber and Lyft trips are combined and cannot be separated.</li>
+		<li>Only rides that are <i>entirely within the city limits</i> are counted.
+		<li>Data was collected over many weeks in fall 2016 and then averaged.</li>
+		<li>No personal data is shown. Pickup/dropoff locations are merged by city block downtown, and by larger areas further out.</li>
+		<li>Every effort has been made to ensure this data is accurate, but SFCTA cannot verify its correctness without outside assistance.</li>
+		</ul>
+		<div style="float:right"><button class="small ui green button">GOT IT</button></div>
+	  </div>
+
     </div>
 
     <script type="application/javascript" src="lib/main.bundle.js"></script>
