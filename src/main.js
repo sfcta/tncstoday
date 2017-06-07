@@ -5,6 +5,7 @@ import 'babel-polyfill';
 import 'isomorphic-fetch';
 import vueSlider from 'vue-slider-component';
 import 'lodash';
+import Cookies from 'js-cookie';
 
 let theme = "dark";
 
@@ -595,9 +596,15 @@ function clickDay(chosenDay) {
   showDailyChart();
 }
 
-function clickHideHelp() {
-  console.log("hide");
+function clickToggleHelp() {
   helpPanel.showHelp = !helpPanel.showHelp;
+
+  // and save it for next time
+  if (helpPanel.showHelp) {
+    Cookies.remove('showHelp');
+  } else {
+    Cookies.set('showHelp','false', {expires:365});
+  }
 }
 
 // Update all colors based on trip totals
@@ -698,6 +705,9 @@ function pickTheme(theme) {
   queryServer();
 }
 
+// eat some cookies -- so we can hide the help permanently
+let cookieShowHelp = Cookies.get('showHelp');
+console.log(cookieShowHelp);
 
 let app = new Vue({
   el: '#panel',
@@ -722,7 +732,7 @@ let app = new Vue({
     pickPickup: pickPickup,
     pickDropoff: pickDropoff,
     clickDay: clickDay,
-    clickHideHelp: clickHideHelp,
+    clickToggleHelp: clickToggleHelp,
     pickTheme: pickTheme,
     getSliderValue: _.debounce(
       function() {
@@ -738,10 +748,10 @@ let app = new Vue({
 let helpPanel = new Vue({
   el: '#helpbox',
   data: {
-    showHelp: true,
+    showHelp: (cookieShowHelp==undefined),
   },
   methods: {
-    clickHideHelp: clickHideHelp,
+    clickToggleHelp: clickToggleHelp,
   },
 });
 

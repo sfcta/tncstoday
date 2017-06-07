@@ -37,7 +37,7 @@
           <div class="dashboard">
             <h3 class="apptitle">TNC'S TODAY &nbsp;&bull;&nbsp; DATA EXPLORER</h3>
             <div class="moreinfo">
-              <a href="#" @click="clickHideHelp">What is this?</a>
+              <a href="#" @click="clickToggleHelp">What is this?</a>
               &nbsp;&nbsp;&nbsp;&bull;&nbsp;&nbsp;&nbsp;
               <a target="_blank" href="http://www.sfcta.org/tncstoday">Learn more&hellip;</a>
               <!--&nbsp;&nbsp;&nbsp;&bull;&nbsp;&nbsp;&nbsp;
@@ -86,18 +86,23 @@
       </div>
       <div id="sfmap"></div>
        <transition name="fade">
-        <div id="helpbox" v-if="showHelp" class="ui segment">
-            <hr/><h2 style="margin-top:0px; margin-bottom:10px;">TNCs Today&hellip; what is this?</h2>
-            You're looking at the number of combined Uber and Lyft trips taken inside San Francisco&mdash;by location and by time of day.
+        <div id="helpbox" v-show="showHelp" class="ui segment">
+            <hr/><h2 style="margin-top:0px; margin-bottom:10px;">TNCs Today: what is this?</h2>
+            You're looking at an estimate of the number of TNC (Uber and Lyft) pickups and dropoffs in San Francisco&mdash;by location and by time of day.
             <ul>
-            <li>Uber and Lyft trips are combined and cannot be separated.</li>
+            <li>Uber and Lyft trips are combined.</li>
             <li>Only rides that are <i>entirely within the city limits</i> are counted.
-            <li>Data was collected over many weeks in fall 2016 and then averaged.</li>
+            <li>Darker colors and higher bars mean more trips to/from an area.</li>
+            <li>Data is averaged from several weeks in fall 2016.</li>
             <li>No personal data is shown. Pickup/dropoff locations are merged by city block downtown, and by larger areas farther out.</li>
             <li>Every effort has been made to ensure this data is accurate, but SFCTA cannot verify its correctness without outside assistance.</li>
             </ul>
-            <div style="float:right">
-              <button @click="clickHideHelp" class="small ui green button">GOT IT</button>
+            <div style="float:right;margin-top:5px;">
+              <button @click="this.window.location.href = 'http://www.sfcta.org/tncstoday'"
+                      class="small ui basic violet button">
+                      Learn More about TNCs&hellip;
+              </button>
+              <button @click="clickToggleHelp" class="small ui violet button">Close</button>
             </div>
          </div>
        </transition>
