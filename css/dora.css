@@ -34,7 +34,7 @@ hr {margin-bottom:0px;}
   vertical-align:center;
   margin-left:10px;
   margin-right:10px;
-  margin-bottom:10px;
+  margin-bottom:0px;
 }
 
 #table-logo {margin-top:5px;}
@@ -129,5 +129,8 @@ a:hover {color: #ddd;}
 }
 
 li {margin-bottom:4px;}
-ul {margin-top:4px;}
+ul {margin-top:5px;}
 
+table {text-align:center; vertical-align:top; }
+td {text-align:center; vertical-align:top; }
+.td-logo {text-align:right; vertical-align:middle; }

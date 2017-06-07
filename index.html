@@ -78,7 +78,7 @@
           <div class="logo">
             <hr/>
             <table id="table-logo"><tr>
-              <td><h4 class="agency"><b><a target="_blank" href="http://www.sfcta.org/tncstoday">SAN FRANCISCO COUNTY TRANSPORTATION AUTHORITY</a></b></h4></td>
+              <td class="td-logo"><h4 class="agency"><b><a target="_blank" href="http://www.sfcta.org/tncstoday">SAN FRANCISCO COUNTY TRANSPORTATION AUTHORITY</a></b></h4></td>
               <td><a class="agency-link" target="_blank" href="http://www.sfcta.org/tncstoday"><img src="/sfcta-logo.png" width=75 height=75 ></img></a></td></tr>
             </table>
           </div>
@@ -87,7 +87,24 @@
       <div id="sfmap"></div>
        <transition name="fade">
         <div id="helpbox" v-show="showHelp" class="ui segment">
-            <hr/><h2 style="margin-top:0px; margin-bottom:10px;">TNCs Today: what is this?</h2>
+            <h2 style="margin-top:10px; margin-bottom:0px;">
+            Exploring the map</h2>
+            <hr style="margin-bottom:5px"/>
+            Click on any block to see the daily pickups and dropoffs for that area.
+            <table><tr>
+              <td class="help"><img height=96 src="mouse-left.png"></td>
+              <td class="help"><img height=96 src="mouse-wheel.png"></td>
+              <td class="help"><img height=96 src="mouse-right.png"></td>
+            </tr><tr>
+              <td class="help">Left-click and drag to pan the map</td>
+              <td class="help">Mouse wheel changes zoom</td>
+              <td class="help">Right-click and drag to change 3D view</td>
+            </tr></table>
+            <br/>
+
+            <h2 style="margin-top:10px; margin-bottom:0px;">
+            About this data</h2>
+            <hr style="margin-bottom:5px"/>
             You're looking at an estimate of the number of TNC (Uber and Lyft) pickups and dropoffs in San Francisco&mdash;by location and by time of day.
             <ul>
             <li>Uber and Lyft trips are combined.</li>
@@ -95,9 +112,8 @@
             <li>Darker colors and higher bars mean more trips to/from an area.</li>
             <li>Data is averaged from several weeks in fall 2016.</li>
             <li>No personal data is shown. Pickup/dropoff locations are merged by city block downtown, and by larger areas farther out.</li>
-            <li>Every effort has been made to ensure this data is accurate, but SFCTA cannot verify its correctness without outside assistance.</li>
             </ul>
-            <div style="float:right;margin-top:5px;">
+            <div style="float:right;margin-top:20px;">
               <button @click="this.window.location.href = 'http://www.sfcta.org/tncstoday'"
                       class="small ui basic violet button">
                       Learn More about TNCs&hellip;
