@@ -38,15 +38,14 @@
             <h3>TNC'S TODAY &raquo;&raquo; DATA EXPLORER</h3>
             <hr/>
             <div id="picker">
-                <br/>
-                <h5>DIRECTION:</h5>
+                <h5>CHOOSE DIRECTION:</h5>
                 <button @click="pickPickup" v-bind:class="{ active: isPickupActive }"
                          class="mini ui inverted blue button">Pick-ups</button>
                 <button @click="pickDropoff" v-bind:class="{ active: isDropoffActive }"
                          class="mini ui inverted red button">Drop-offs</button>
                 <br/>
                 <br/>
-                <h5>DAY OF WEEK:</h5>
+                <h5>CHOOSE DAY OF WEEK:</h5>
                 <button v-for="(item, index) in days"
                         @click="clickDay(index)"
                         class="mini ui inverted button"
@@ -57,7 +56,6 @@
                 <div id="stats-panel" class="ui">
                   <div id="stats-loader" class="ui loader" v-bind:class="{active: nowMoloading}"></div>
 
-                  <br/>
                   <br/>
                   <hr/>
                   <h1>{{details1}}<br/>

@@ -539,7 +539,7 @@ let timeSlider = {
           formatter: function(index) {
             return (index==0 ? 'All Day >>' : hourLabels[index-1]);
           },
-          style: {"marginTop":"-20px","marginBottom":"30px","marginLeft":"46px","marginRight":"18px"},
+          style: {"marginTop":"-25px","marginBottom":"30px","marginLeft":"46px","marginRight":"18px"},
 };
 
 function sliderChanged(index) {
