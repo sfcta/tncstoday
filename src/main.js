@@ -128,9 +128,12 @@ function getColor(numTrips) {
   return taColorRamp[i-1][1];
 }
 
+let neighborhood = [];
+
 // Create one giant GeoJSON layer. This should really be done in PostGIS, but I'm rushing.
 // See http://www.postgresonline.com/journal/archives/267-Creating-GeoJSON-Feature-Collections-with-JSON-and-PostGIS-functions.html
 function buildTazDataFromJson(tazs, options) {
+  console.log(tazs);
   // loop for the two directions
   for (let direction in jsonByDay) {
     // loop for each day of week
@@ -142,6 +145,8 @@ function buildTazDataFromJson(tazs, options) {
       for (let taz of tazs) {
         if (taz.taz > 981) continue;
         if (skipTazs.has(taz.taz)) continue;
+
+        neighborhood[taz.taz] = taz.nhood;
 
         let json = {};
         json['type'] = 'Feature';
@@ -353,7 +358,8 @@ function clickedOnTaz(e) {
       let popupText = buildPopupTitle(trips) +
               "<hr/>" +
               "<div id=\"chart\" style=\"width: 300px; height:250px;\"></div>" +
-              "<p text-align=\"right\" class=\"hint\"><i>TAZ Code: "+ chosenTaz + "</i></p>";
+              "<p text-align=\"right\" class=\"hint\"><i>"+ neighborhood[chosenTaz] +
+              ": TAZ code "+ chosenTaz + "</i></p>";
 
       if (popup) {
         popup.remove();
@@ -412,7 +418,7 @@ function queryServer() {
   const segmentUrl = api_server + 'json_taz?';
 
   // convert option list into a url parameter string
-  var taz_fields = {select: 'taz,geometry' };
+  var taz_fields = {select: 'taz,geometry,nhood' };
   var params = [];
   for (let key in taz_fields) params.push(esc(key) + '=' + esc(taz_fields[key]));
   let finalUrl = segmentUrl + params.join('&');

@@ -53,7 +53,7 @@ hr {margin-bottom:0px;}
   float: right;
 }
 
-p.hint {color:#888; text-align:right; margin-right:25px;}
+p.hint {color:#666; text-align:right; margin-right:24px; margin-top:-20px;}
 
 #panel label {
   color:white;
@@ -74,13 +74,14 @@ p.hint {color:#888; text-align:right; margin-right:25px;}
      right: 0;
      bottom: 1;
      left: 0;
-     width: 500px;
+     width: 450px;
      z-index:20;
      box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.4);
 }
 
 #daily-chart {
   height:200px;
+  margin-top:-15px;
 }
 
 #popup-title {
