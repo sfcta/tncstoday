@@ -187,7 +187,7 @@ function addTazLayer(tazs, options={}) {
         source: 'taz-source',
         type: 'fill-extrusion',
         paint: {
-            'fill-extrusion-opacity':0.8,
+            'fill-extrusion-opacity':0.75,
             'fill-extrusion-color': {
                 property: 'trips',
                 stops: taColorRamp,
@@ -435,8 +435,6 @@ function queryServer() {
 let dailyChart = null;
 
 function showDailyChart() {
-  app.nowMoloading = false;
-
   let data = [];
 
   for (let h=0; h<24; h++) {
@@ -480,6 +478,8 @@ function showDailyChart() {
       eventLineColors: ['#ccc'],
     });
   }
+
+  app.nowMoloading = false;
 }
 
 function pickPickup(thing) {
@@ -554,6 +554,7 @@ function sliderChanged(index) {
   showDailyChart();
 
   switchToHourlyView(index);
+  displayDetails();
 }
 
 function switchToHourlyView(index) {
@@ -582,12 +583,32 @@ function loadHourlyData(hour) {
 
 
 function displayDetails() {
-  let trips = Math.round(app.isPickupActive ? totalPickups[day] : totalDropoffs[day]);
-  trips = Math.round(trips/100)*100;
-  let direction = (app.isPickupActive ? 'pickups' : 'dropoffs');
+  try {
+    let index = app.sliderValue;
+    let hour = (index-1+3) % 24
+    let trips = 0;
 
-  app.details1 = weekdays[day] + ':';
-  app.details2 = trips.toLocaleString() + " citywide " + direction;
+    if (index) {
+      trips = dailyTotals[day][hour][chosenDir];
+    } else {
+      hour = 0;
+      trips = app.isPickupActive ? totalPickups[day] : totalDropoffs[day];
+    }
+
+    trips = Math.round(trips/100)*100;
+
+    if (!trips) return;
+
+    // Build 1st line
+    app.details1 = weekdays[day]
+                 + (index ? (' at ' + hourLabels[index-1]) : '')
+                 + ':';
+    // Build 2nd line
+    app.details2 = trips.toLocaleString() + " citywide " + chosenDir;
+  }
+  catch (error) {
+    //eh, no big deal //console.log(error);
+  }
 }
 
 function clickDay(chosenDay) {
@@ -598,6 +619,10 @@ function clickDay(chosenDay) {
   updateColors();
   updateChart();
   showDailyChart();
+}
+
+function clickAllDay(e) {
+  app.sliderValue = 0;
 }
 
 function clickToggleHelp() {
@@ -740,6 +765,7 @@ let app = new Vue({
     pickPickup: pickPickup,
     pickDropoff: pickDropoff,
     clickDay: clickDay,
+    clickAllDay: clickAllDay,
     clickToggleHelp: clickToggleHelp,
     getSliderValue: _.debounce(
       function() {

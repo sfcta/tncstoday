@@ -135,3 +135,10 @@ ul {margin-top:5px;}
 table {text-align:center; vertical-align:top; }
 td {text-align:center; vertical-align:top; }
 .td-logo {text-align:right; vertical-align:middle; }
+
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.5s
+}
+.fade-enter, .fade-leave-to /* .fade-leave-active in <2.1.8 */ {
+  opacity: 0
+}
