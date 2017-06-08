@@ -9,7 +9,7 @@ import Cookies from 'js-cookie';
 
 let theme = "dark";
 
-let api_server = 'http://api/tnc/';
+let api_server = 'http://api/api/';
 
 // some important global variables.
 let tripTotals = null;
@@ -402,7 +402,7 @@ function calculateTripTotals(jsonData) {
 function fetchTripTotals() {
   if (tripTotals) return;
 
-  const url = api_server + 'taz_total';
+  const url = api_server + 'tnc_taz_totals';
 
   fetch(url)
     .then((resp) => resp.json()).then(function(jsonData) {
@@ -415,7 +415,7 @@ function fetchTripTotals() {
 }
 
 function queryServer() {
-  const segmentUrl = api_server + 'json_taz?';
+  const segmentUrl = api_server + 'taz_boundaries?';
 
   // convert option list into a url parameter string
   var taz_fields = {select: 'taz,geometry,nhood' };
