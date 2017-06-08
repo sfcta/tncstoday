@@ -633,7 +633,14 @@ let maxHourlyTrips = 0;
 function fetchDailyDetails() {
   const url = api_server + 'tnc_trip_stats?select=taz,day_of_week,time,dropoffs,pickups';
   fetch(url).then((resp) => resp.json()).then(function(json) {
+    buildDailyDetails(json);
+  })
+  .catch(function(error) {
+    console.log("err: "+error);
+  });
+}
 
+function buildDailyDetails(json) {
     cachedHourlyData = {};
     dailyTotals = {};
     for (let record of json) {
@@ -672,33 +679,41 @@ function fetchDailyDetails() {
       cachedHourlyData[day][0]['pickups'][taz] += pickup;
     }
 
-    showDailyChart();
     app.timeSlider.disabled = false;
+    maxHourlyTrips = 20000;
+    showDailyChart();
 
-  }).catch(function(error) {
-    console.log("err: "+error);
-  });
-
-  maxHourlyTrips = 20000;
-  return dailyTotals;
+    return dailyTotals;
 }
 
 function fetchZipFile() {
-
   const url = '/db-files.zip';
-  fetch(url).then((resp) => resp.blob()).then(function(contents) {
-    let zipfile = new JSZip();
-    zipfile.loadAsync(contents).then(function(zip) {
-      return zip.file('tnc_taz_totals.json').async('string');
-    }).then(function(text) {
-      let json = JSON.parse(text);
-      console.log(json);
-    })
-  }).catch(function(error) {
-      console.log("err: "+error);
+
+  fetch(url)
+  .then((resp) => resp.blob())
+  .then((content) => new JSZip().loadAsync(content))
+  .then((zzip) => {
+      zzip.file('tnc_taz_totals.json').async('string')
+        .then((text) => {
+            let json = JSON.parse(text);
+            tripTotals = calculateTripTotals(json);
+        });
+      zzip.file('taz_boundaries.json').async('string')
+        .then((text) => {
+            let json = JSON.parse(text);
+            addTazLayer(json);
+        });
+      zzip.file('tnc_trip_stats.json').async('string')
+        .then((text) => {
+            let json = JSON.parse(text);
+            buildDailyDetails(json);
+        });
+  })
+	.catch(function(error) {
+       console.log("err: failed loading .zipfile, trying API instead; "+error);
+       fetchTripTotals();
   });
 }
-
 
 // eat some cookies -- so we can hide the help permanently
 let cookieShowHelp = Cookies.get('showHelp');
@@ -747,7 +762,5 @@ let helpPanel = new Vue({
     clickToggleHelp: clickToggleHelp,
   },
 });
-
-fetchTripTotals();
 
 fetchZipFile();
