@@ -97,9 +97,22 @@
        <transition name="fade">
         <div id="helpbox" v-show="showHelp" class="ui segment">
             <h2 style="margin-top:10px; margin-bottom:0px;">
-            Exploring the map</h2>
+            Uber and Lyft in San Francisco</h2>
             <hr style="margin-bottom:5px"/>
-            Click on any block to see the daily pickups and dropoffs for that area.
+            You're looking at an estimate of the number of TNC (Uber and Lyft) pickups and dropoffs in San Francisco&mdash;by location and by time of day.
+            <ul>
+            <li>Uber and Lyft trips are combined.</li>
+            <li>Only rides that are <b><i>entirely within the city limits</i></b> are counted.
+            <li>Data is averaged from several weeks in <b><i>fall 2016</i></b>.</li>
+            <li>Darker colors &amp; taller bars mean more trips to/from an area.</li>
+            <li>No personal data is shown. Pickup/dropoff locations are merged by city block downtown,
+                and by larger areas farther out.</li>
+            </ul>
+            <h2 style="margin-top:10px; margin-bottom:0px;">
+            How to use this map</h2>
+            <hr style="margin-bottom:5px"/>
+            Click on any block to see the daily pickups and dropoffs for an area.
+            You can choose different days of the week and times of day from the right panel.
             <table><tr>
               <td class="help"><img height=96 src="/images/mouse-left.png"></td>
               <td class="help"><img height=96 src="/images/mouse-wheel.png"></td>
@@ -111,19 +124,8 @@
             </tr></table>
             <br/>
 
-            <h2 style="margin-top:10px; margin-bottom:0px;">
-            About this data</h2>
-            <hr style="margin-bottom:5px"/>
-            You're looking at an estimate of the number of TNC (Uber and Lyft) pickups and dropoffs in San Francisco&mdash;by location and by time of day.
-            <ul>
-            <li>Uber and Lyft trips are combined.</li>
-            <li>Only rides that are <i>entirely within the city limits</i> are counted.
-            <li>Darker colors and higher bars mean more trips to/from an area.</li>
-            <li>Data is averaged from several weeks in fall 2016.</li>
-            <li>No personal data is shown. Pickup/dropoff locations are merged by city block downtown, and by larger areas farther out.</li>
-            </ul>
             <div style="margin-top:20px;">
-              <button @click="clickToggleHelp" class="small ui right floated violet button">Close</button>
+              <button @click="clickToggleHelp" class="small ui right floated violet button">OK, GOT IT</button>
               <button @click="this.window.location.href = 'http://www.sfcta.org/tncstoday'"
                       class="small ui right floated basic violet button">
                       Learn more about TNCs&hellip;

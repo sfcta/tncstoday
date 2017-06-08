@@ -788,4 +788,5 @@ let helpPanel = new Vue({
   },
 });
 
-fetchZipFile();
+//fetchZipFile();
+fetchTripTotals();
