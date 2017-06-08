@@ -3,9 +3,10 @@
 // Must use npm and babel to support IE11/Safari
 import 'babel-polyfill';
 import 'isomorphic-fetch';
-import vueSlider from 'vue-slider-component';
 import 'lodash';
+import vueSlider from 'vue-slider-component';
 import Cookies from 'js-cookie';
+import JSZip from 'jszip';
 
 let theme = "dark";
 
@@ -133,7 +134,6 @@ let neighborhood = [];
 // Create one giant GeoJSON layer. This should really be done in PostGIS, but I'm rushing.
 // See http://www.postgresonline.com/journal/archives/267-Creating-GeoJSON-Feature-Collections-with-JSON-and-PostGIS-functions.html
 function buildTazDataFromJson(tazs, options) {
-  console.log(tazs);
   // loop for the two directions
   for (let direction in jsonByDay) {
     // loop for each day of week
@@ -711,9 +711,25 @@ function pickTheme(theme) {
   queryServer();
 }
 
+function fetchZipFile() {
+
+  const url = '/db-files.zip';
+  fetch(url).then((resp) => resp.blob()).then(function(contents) {
+    let zipfile = new JSZip();
+    zipfile.loadAsync(contents).then(function(zip) {
+      return zip.file('tnc_taz_totals.json').async('string');
+    }).then(function(text) {
+      let json = JSON.parse(text);
+      console.log(json);
+    })
+  }).catch(function(error) {
+      console.log("err: "+error);
+  });
+}
+
+
 // eat some cookies -- so we can hide the help permanently
 let cookieShowHelp = Cookies.get('showHelp');
-console.log(cookieShowHelp);
 
 let app = new Vue({
   el: '#panel',
@@ -762,3 +778,5 @@ let helpPanel = new Vue({
 });
 
 fetchTripTotals();
+
+fetchZipFile();
