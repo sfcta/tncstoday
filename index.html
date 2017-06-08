@@ -123,12 +123,12 @@
             <li>Data is averaged from several weeks in fall 2016.</li>
             <li>No personal data is shown. Pickup/dropoff locations are merged by city block downtown, and by larger areas farther out.</li>
             </ul>
-            <div style="float:right;margin-top:20px;">
+            <div style="margin-top:20px;">
+              <button @click="clickToggleHelp" class="small ui right floated violet button">Close</button>
               <button @click="this.window.location.href = 'http://www.sfcta.org/tncstoday'"
-                      class="small ui basic violet button">
+                      class="small ui right floated basic violet button">
                       Learn more about TNCs&hellip;
               </button>
-              <button @click="clickToggleHelp" class="small ui violet button">Close</button>
             </div>
          </div>
        </transition>
