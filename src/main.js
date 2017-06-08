@@ -8,8 +8,6 @@ import vueSlider from 'vue-slider-component';
 import Cookies from 'js-cookie';
 import JSZip from 'jszip';
 
-let theme = "dark";
-
 let api_server = 'http://api/api/';
 
 // some important global variables.
@@ -685,32 +683,6 @@ function fetchDailyDetails() {
   return dailyTotals;
 }
 
-function pickTheme(theme) {
-  if (mymap.getLayer('taz')) mymap.removeLayer('taz');
-  if (mymap.getSource('taz-source')) mymap.removeSource('taz-source');
-  if (popup) popup.remove();
-
-    // delete old chart
-  let chart = document.getElementById("chart");
-  if (chart) {
-    chart.parentNode.removeChild(chart);
-    currentChart = null;
-  }
-
-  if (theme==1) {
-    taColorRamp = colorRamp1;
-    mymap.setStyle('mapbox://styles/mapbox/light-v9');
-  } else if (theme==2) {
-    taColorRamp = colorRamp2;
-    mymap.setStyle('mapbox://styles/mapbox/dark-v9');
-  } else {
-    taColorRamp = colorRamp3;
-    mymap.setStyle('mapbox://styles/mapbox/light-v9');
-  }
-
-  queryServer();
-}
-
 function fetchZipFile() {
 
   const url = '/db-files.zip';
@@ -755,7 +727,6 @@ let app = new Vue({
     pickDropoff: pickDropoff,
     clickDay: clickDay,
     clickToggleHelp: clickToggleHelp,
-    pickTheme: pickTheme,
     getSliderValue: _.debounce(
       function() {
         sliderChanged(this.sliderValue);
