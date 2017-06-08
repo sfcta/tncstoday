@@ -693,21 +693,20 @@ function fetchZipFile() {
   .then((resp) => resp.blob())
   .then((content) => new JSZip().loadAsync(content))
   .then((zzip) => {
-      zzip.file('tnc_taz_totals.json').async('string')
-        .then((text) => {
-            let json = JSON.parse(text);
-            tripTotals = calculateTripTotals(json);
+    zzip.file('tnc_taz_totals.json').async('string').then((text) => {
+      let json = JSON.parse(text);
+      tripTotals = calculateTripTotals(json);
+
+      zzip.file('taz_boundaries.json').async('string').then((text) => {
+        let json = JSON.parse(text);
+        addTazLayer(json);
+
+        zzip.file('tnc_trip_stats.json').async('string').then((text) => {
+          let json = JSON.parse(text);
+          buildDailyDetails(json);
         });
-      zzip.file('taz_boundaries.json').async('string')
-        .then((text) => {
-            let json = JSON.parse(text);
-            addTazLayer(json);
-        });
-      zzip.file('tnc_trip_stats.json').async('string')
-        .then((text) => {
-            let json = JSON.parse(text);
-            buildDailyDetails(json);
-        });
+      });
+    });
   })
 	.catch(function(error) {
        console.log("err: failed loading .zipfile, trying API instead; "+error);
