@@ -21,7 +21,7 @@ let currentChart = null;
 let currentTotal = 0;
 let cachedTazData = null;
 
-let mode2d = false;
+let mapIs2D = false;
 
 mapboxgl.accessToken = "pk.eyJ1IjoicHNyYyIsImEiOiJjaXFmc2UxanMwM3F6ZnJtMWp3MjBvZHNrIn0._Dmske9er0ounTbBmdRrRQ";
 
@@ -94,17 +94,29 @@ export default class PitchToggle {
         this._btn.type = 'button';
         this._btn['aria-label'] = 'Toggle Pitch';
         this._btn.onclick = function() {
-            if (map.getPitch() === 0) {
+            if (mapIs2D) {
+                mapIs2D=false;
+                map.dragRotate.enable();
+                map.touchZoomRotate.enableRotation();
+
                 updateColors();
                 let options = {pitch: _this._pitch, bearing: _this._bearing};
                 if (_this._minpitchzoom && map.getZoom() > _this._minpitchzoom) {
                     options.zoom = _this._minpitchzoom;
                 }
                 map.easeTo(options);
+
                 _this._btn.className = 'mapboxgl-ctrl-icon mapboxgl-ctrl-pitchtoggle-2d';
+
             } else {
+                mapIs2D=true;
+                map.dragRotate.disable();
+                map.touchZoomRotate.disableRotation();
+
                 flattenBuildings();
+                mymap.setPaintProperty('taz-selected','fill-extrusion-height',0);
                 map.easeTo({pitch: 0, bearing: 0});
+
                 _this._btn.className = 'mapboxgl-ctrl-icon mapboxgl-ctrl-pitchtoggle-3d';
             }
         };
@@ -173,6 +185,24 @@ function buildTazDataFromJson(tazs, options) {
   return jsonByDay;
 }
 
+// these are the deets for painting the selected zone in 3D
+let paintZone3D = {
+  'fill-extrusion-opacity':1.0,
+  'fill-extrusion-color': '#fff',
+  'fill-extrusion-height': {
+      property: 'trips',
+      type:'identity',
+  },
+};
+
+// these are the deets for painting the selected zone in flat-land 2D
+let paintZone2D = {
+  'fill-extrusion-opacity':1.0,
+  'fill-extrusion-color': '#fff',
+  'fill-extrusion-height': 0,
+};
+
+
 function addTazLayer(tazs, options={}) {
   buildTazDataFromJson(tazs);
 
@@ -207,14 +237,7 @@ function addTazLayer(tazs, options={}) {
        id: "taz-selected",
        type: 'fill-extrusion',
        source: 'taz-source',
-       paint: {
-            'fill-extrusion-opacity':1.0,
-            'fill-extrusion-color': '#fff',
-            'fill-extrusion-height': {
-                property: 'trips',
-                type:'identity',
-            },
-       },
+       paint: (mapIs2D ? paintZone2D: paintZone3D),
        filter: ["==", "taz", ""]
    });
 
@@ -643,8 +666,12 @@ function clickToggleHelp() {
 
 // Update all colors based on trip totals
 function updateColors() {
-  mymap.setPaintProperty('taz','fill-extrusion-height',
-    {property: 'trips',type:'identity'});
+  if (!mapIs2D) {
+    mymap.setPaintProperty('taz','fill-extrusion-height',
+      {property: 'trips',type:'identity'});
+    mymap.setPaintProperty('taz-selected','fill-extrusion-height',
+      {property: 'trips',type:'identity'});
+  }
 
   if (app.sliderValue==0) {
     mymap.getSource('taz-source').setData(jsonByDay[chosenDir][day]);
