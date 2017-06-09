@@ -28,12 +28,12 @@ mapboxgl.accessToken = "pk.eyJ1IjoicHNyYyIsImEiOiJjaXFmc2UxanMwM3F6ZnJtMWp3MjBvZ
 let mymap = new mapboxgl.Map({
     container: 'sfmap',
     style: 'mapbox://styles/mapbox/light-v9',
-    center: [-122.43, 37.78],
+    center: [-122.44, 37.77],
     zoom: 12,
     bearing: 0,
     pitch: 20,
     attributionControl: true,
-    logoPosition: 'bottom-left',
+    logoPosition: 'bottom-right',
 });
 
 // no ubers on the farallon islands (at least, not yet)
@@ -188,7 +188,7 @@ function buildTazDataFromJson(tazs, options) {
 // these are the deets for painting the selected zone in 3D
 let paintZone3D = {
   'fill-extrusion-opacity':1.0,
-  'fill-extrusion-color': '#fff',
+  'fill-extrusion-color': '#6ff',
   'fill-extrusion-height': {
       property: 'trips',
       type:'identity',
@@ -198,7 +198,7 @@ let paintZone3D = {
 // these are the deets for painting the selected zone in flat-land 2D
 let paintZone2D = {
   'fill-extrusion-opacity':1.0,
-  'fill-extrusion-color': '#fff',
+  'fill-extrusion-color': '#6ff',
   'fill-extrusion-height': 0,
 };
 
@@ -219,7 +219,7 @@ function addTazLayer(tazs, options={}) {
         source: 'taz-source',
         type: 'fill-extrusion',
         paint: {
-            'fill-extrusion-opacity':0.75,
+            'fill-extrusion-opacity':1.0,
             'fill-extrusion-color': {
                 property: 'trips',
                 stops: taColorRamp,
@@ -239,7 +239,7 @@ function addTazLayer(tazs, options={}) {
        source: 'taz-source',
        paint: (mapIs2D ? paintZone2D: paintZone3D),
        filter: ["==", "taz", ""]
-   });
+   } );
 
   // make taz hover cursor a pointer so user knows they can click.
   mymap.on("mousemove", "taz", function(e) {
@@ -255,14 +255,40 @@ function addTazLayer(tazs, options={}) {
   });
 
   // Add nav controls
-  if (first) {
-    mymap.addControl(new PitchToggle({bearing: 0, pitch:20, minpitchzoom:14}), 'top-left');
-    mymap.addControl(new mapboxgl.NavigationControl(), 'top-left');
-    first = false;
-  }
+  mymap.addControl(new PitchToggle({bearing: 0, pitch:20, minpitchzoom:14}), 'top-left');
+  mymap.addControl(new mapboxgl.NavigationControl(), 'top-left');
+
+  addLegend();
 }
 
-let first = true;
+let isCurrentLegendDaily = true;
+
+// Add legend -- HACKITY because Vue doesn't like to hide/show img elements
+// See https://github.com/vuejs/vue/issues/1646
+function addLegend() {
+  isCurrentLegendDaily = app.isAllDay;
+  let imgSrc = (isCurrentLegendDaily ? '/images/legend-daily.png' : '/images/legend-hourly.png');
+
+  let legend = document.createElement('img');
+  legend.setAttribute('id', 'legend');
+  legend.setAttribute('src', imgSrc);
+
+  // do it
+  let mapElement = document.getElementById("sfmap");
+  mapElement.appendChild(legend);
+}
+
+function updateLegend() {
+  // skip, if we already have the correct legend
+  if (isCurrentLegendDaily === app.isAllDay) return;
+
+  // remove old legend first
+  let mapElement = document.getElementById("sfmap");
+  let legend = document.getElementById("legend");
+  if (legend) mapElement.removeChild(legend);
+
+  addLegend();
+}
 
 function buildChartDataFromJson(json) {
   let data = [];
@@ -501,13 +527,14 @@ function showDailyChart() {
       parseTime: false,
       fillOpacity: 0.4,
       pointSize: 1,
-      behaveLikeLine: true,
+      behaveLikeLine: false,
       eventStrokeWidth: 2,
       eventLineColors: ['#ccc'],
     });
   }
 
   app.nowMoloading = false;
+  updateLegend();
 }
 
 function pickPickup(thing) {
@@ -583,6 +610,7 @@ function sliderChanged(index) {
 
   switchToHourlyView(index);
   displayDetails();
+  updateLegend();
 }
 
 function switchToHourlyView(index) {

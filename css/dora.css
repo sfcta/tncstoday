@@ -151,7 +151,7 @@ a {color: #fff;}
 a:hover {color: #ddd;}
 
 .mapboxgl-popup-content {
-  opacity:0.85;
+  opacity:0.9;
   padding-bottom: 5px;
 }
 
@@ -171,4 +171,14 @@ td {text-align:center; vertical-align:top; }
 
 #btn-all-day {
   position:absolute;right:0;margin-right:42px;margin-top:-22px;z-index:100;
+}
+
+#legend {
+  position: absolute;
+  bottom:0;
+  left:0;
+  margin-bottom:5px;
+  margin-left:5px;
+  width:500px;
+  z-index:99;
 }

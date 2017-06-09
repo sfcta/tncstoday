@@ -96,7 +96,7 @@
                         v-if="!isAllDay"
                         class="mini ui basic compact button"
                         v-bind:class="day < 5 ? 'green' : 'yellow'">
-                        Back to Daily
+                        &laquo; Back to Daily
                 </button>
             </transition>
             </div>
@@ -114,9 +114,10 @@
             </table>
           </div>
         </div>
-      <div id="sfmap"></div>
-      <transition name="fade">
-        <div id="helpbox" v-show="showHelp" class="ui segment">
+        <div id="sfmap">
+        </div>
+
+      <div id="helpbox" v-show="showHelp" class="ui segment">
             <h2 style="margin-top:10px; margin-bottom:0px;">
             Uber and Lyft in San Francisco</h2>
             <hr style="margin-bottom:5px"/>
@@ -157,8 +158,7 @@
                       Learn more about TNCs&hellip;
               </button>
             </div>
-         </div>
-      </transition>
+      </div>
     </div>
     <script type="application/javascript" src="lib/main.bundle.js"></script>
   </body>
