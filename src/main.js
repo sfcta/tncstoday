@@ -21,6 +21,8 @@ let currentChart = null;
 let currentTotal = 0;
 let cachedTazData = null;
 
+let mode2d = false;
+
 mapboxgl.accessToken = "pk.eyJ1IjoicHNyYyIsImEiOiJjaXFmc2UxanMwM3F6ZnJtMWp3MjBvZHNrIn0._Dmske9er0ounTbBmdRrRQ";
 
 let mymap = new mapboxgl.Map({
@@ -791,5 +793,5 @@ let helpPanel = new Vue({
   },
 });
 
-//fetchZipFile();
-fetchTripTotals();
+fetchZipFile();
+//fetchTripTotals();

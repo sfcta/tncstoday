@@ -138,8 +138,10 @@
 
             <div style="margin-top:20px;">
               <button @click="clickToggleHelp" class="small ui right floated violet button">OK, GOT IT</button>
-              <button @click="this.window.location.href = 'http://www.sfcta.org/tncstoday'"
-                      class="small ui right floated basic violet button">
+              &nbsp;&nbsp;
+              <button @click="this.window.open('http://www.sfcta.org/tncstoday','_blank')"
+                      class="small ui right floated basic violet button"
+                      style="margin-right:5px">
                       Learn more about TNCs&hellip;
               </button>
             </div>
