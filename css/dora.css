@@ -164,9 +164,12 @@ td {text-align:center; vertical-align:top; }
 .td-logo {text-align:right; vertical-align:middle; }
 
 .fade-enter-active, .fade-leave-active {
-  transition: opacity 0.5s
+  transition: opacity 1.0s
 }
 .fade-enter, .fade-leave-to /* .fade-leave-active in <2.1.8 */ {
   opacity: 0
 }
 
+#btn-all-day {
+  position:absolute;right:0;margin-right:42px;margin-top:-22px;z-index:100;
+}

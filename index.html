@@ -82,12 +82,24 @@
             </div>
           </div>
 
-          <div id="stats-panel">
+          <div id="stats-panel" style="position:relative">
             <hr/>
             <h5>SUMMARY STATISTICS:</h5>
             <h1>{{details1}}<br/>
                 {{details2}}</h1>
-            <h5>&nbsp;TIME OF DAY:</h5>
+            <h5 style="margin-left:12px">
+            TIME OF DAY:
+            </h5>
+            <div id="btn-all-day">
+            <transition name="fade">
+                <button @click="clickAllDay"
+                        v-if="!isAllDay"
+                        class="mini ui basic compact button"
+                        v-bind:class="day < 5 ? 'green' : 'yellow'">
+                        Back to Daily
+                </button>
+            </transition>
+            </div>
             <div id="daily-chart">
               <div id="stats-loader" class="ui text loader" v-bind:class="{active: nowMoloading}">Thinking&hellip;</div>
             </div>
