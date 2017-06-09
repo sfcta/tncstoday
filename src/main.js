@@ -359,15 +359,18 @@ function clickedOnTaz(e) {
               "<p text-align=\"right\" class=\"hint\"><i>"+ neighborhood[chosenTaz] +
               ": TAZ code "+ chosenTaz + "</i></p>";
 
-      if (popup) {
-        popup.remove();
-        popup=null
-      }
-
       popup = new mapboxgl.Popup({closeOnClick: true})
         .setLngLat(e.lngLat)
-        .setHTML(popupText)
-        .addTo(mymap);
+        .setHTML(popupText);
+
+      popup.on('close', function(p) {
+        mymap.setFilter("taz-selected", ["==", "taz", '']);
+      });
+
+      // highlight the TAZ (again)
+      mymap.setFilter("taz-selected", ["==", "taz", chosenTaz]);
+
+      popup.addTo(mymap);
 
       let data = buildChartDataFromJson(jsonData);
       createChart(data);
