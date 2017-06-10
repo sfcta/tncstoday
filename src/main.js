@@ -99,6 +99,15 @@ export default class PitchToggle {
                 map.dragRotate.enable();
                 map.touchZoomRotate.enableRotation();
 
+                // In 3D mode, place TAZs above everything
+                map.moveLayer('taz'); // to the top
+                map.moveLayer('taz-selected'); // to the very top
+                map.setPaintProperty('taz','fill-extrusion-opacity',0.85);
+
+                mymap.setPaintProperty('road-label-large', 'text-color', '#000');
+                mymap.setPaintProperty('road-label-medium', 'text-color', '#000');
+                mymap.setPaintProperty('road-label-small', 'text-color', '#000');
+
                 updateColors();
                 let options = {pitch: _this._pitch, bearing: _this._bearing};
                 if (_this._minpitchzoom && map.getZoom() > _this._minpitchzoom) {
@@ -114,7 +123,17 @@ export default class PitchToggle {
                 map.touchZoomRotate.disableRotation();
 
                 flattenBuildings();
+                map.setPaintProperty('taz','fill-extrusion-opacity',1.0);
+
                 mymap.setPaintProperty('taz-selected','fill-extrusion-height',0);
+                mymap.setPaintProperty('road-label-large', 'text-color', '#fff');
+                mymap.setPaintProperty('road-label-medium', 'text-color', '#fff');
+                mymap.setPaintProperty('road-label-small', 'text-color', '#fff');
+
+                // In 2D mode, place TAZs below the streets
+                map.moveLayer('taz','road-street');
+                map.moveLayer('taz-selected', 'road-street');
+
                 map.easeTo({pitch: 0, bearing: 0});
 
                 _this._btn.className = 'mapboxgl-ctrl-icon mapboxgl-ctrl-pitchtoggle-3d';
@@ -219,7 +238,7 @@ function addTazLayer(tazs, options={}) {
         source: 'taz-source',
         type: 'fill-extrusion',
         paint: {
-            'fill-extrusion-opacity':1.0,
+            'fill-extrusion-opacity':0.85,
             'fill-extrusion-color': {
                 property: 'trips',
                 stops: taColorRamp,
@@ -239,7 +258,8 @@ function addTazLayer(tazs, options={}) {
        source: 'taz-source',
        paint: (mapIs2D ? paintZone2D: paintZone3D),
        filter: ["==", "taz", ""]
-   } );
+     }
+   );
 
   // make taz hover cursor a pointer so user knows they can click.
   mymap.on("mousemove", "taz", function(e) {
@@ -259,6 +279,36 @@ function addTazLayer(tazs, options={}) {
   mymap.addControl(new mapboxgl.NavigationControl(), 'top-left');
 
   addLegend();
+
+  // Muck with the mapbox layer colors and road widths
+  mymap.removeLayer('place-city-lg-n');
+  mymap.removeLayer('place-town');
+  mymap.removeLayer('place-neighbourhood');
+  mymap.removeLayer('poi-scalerank3');
+  mymap.setPaintProperty('road-motorway', 'line-width', 1.0);
+  mymap.setPaintProperty('road-trunk', 'line-width', 1.0);
+  mymap.setPaintProperty('road-primary', 'line-width', 1.0);
+  mymap.setPaintProperty('road-secondary-tertiary', 'line-width', 1.0);
+  mymap.setPaintProperty('road-secondary-tertiary', 'line-opacity', 0.5);
+  mymap.setPaintProperty('road-street', 'line-width', 1.0);
+  mymap.setPaintProperty('road-street', 'line-opacity', 0.2);
+  mymap.setPaintProperty('road-label-large', 'text-halo-width', 0.0);
+  mymap.setPaintProperty('road-label-medium', 'text-halo-width', 0.0);
+  mymap.setPaintProperty('road-label-small', 'text-halo-width', 0.0);
+  mymap.setPaintProperty('road-label-large', 'text-color', '#fff');
+  mymap.setPaintProperty('road-label-medium', 'text-color', '#fff');
+  mymap.setPaintProperty('road-label-small', 'text-color', '#fff');
+  mymap.setPaintProperty('poi-scalerank1', 'text-halo-width', 0.0);
+  mymap.setPaintProperty('poi-parks-scalerank1', 'text-halo-width', 0.0);
+  mymap.setPaintProperty('poi-parks-scalerank3', 'text-halo-width', 0.0);
+  mymap.setPaintProperty('bridge-primary', 'line-width', 1.0);
+  mymap.setPaintProperty('bridge-secondary-tertiary', 'line-width', 1.0);
+  mymap.setPaintProperty('bridge-motorway', 'line-width', 1.0);
+  mymap.setPaintProperty('bridge-motorway-2', 'line-width', 1.0);
+  mymap.setPaintProperty('bridge-motorway_link', 'line-width', 1.0);
+
+  let roads = mymap.getLayer('place-neighbourhood');
+  console.log(roads);
 }
 
 let isCurrentLegendDaily = true;
@@ -308,26 +358,24 @@ function createChart(data) {
   // do some weird rounding to get y-axis scale to the 20s
   let ymax = 0;
   for (let entry of data) {
-    for (let key in entry) {
-      if (key==='hour') continue;
-      ymax = Math.max(ymax,entry[key]);
-    }
+    ymax = Math.max(ymax,entry['pickups']+entry['dropoffs']) - 1;
   }
-  let z= Math.round(ymax/20)*20 + 20;
+  let z = Math.round(ymax/20)*20 + 20;
 
-  currentChart = new Morris.Line({
+  currentChart = new Morris.Bar({
     // ID of the element in which to draw the chart.
     element: 'chart',
     data: data,
+    stacked: true,
     // The name of the data record attribute that contains x-values.
     xkey: 'hour',
     // A list of names of data record attributes that contain y-values.
     ykeys: ['pickups', 'dropoffs'],
     ymax: z,
     labels: ['Pickups', 'Dropoffs'],
-    lineColors: ["#44f","#f66"],
+    barColors: ["#3377cc","#991111",],
     xLabels: "Hour",
-    xLabelAngle: 45,
+    xLabelAngle: 60,
     xLabelFormat: dateFmt,
     yLabelFormat: yFmt,
     hideHover: 'true',
@@ -353,7 +401,8 @@ function updateChart() {
   let chart = document.getElementById("chart");
   if (!chart) return;
 
-  let trips = Math.round(tripTotals[chosenTaz][day][chosenDir]);
+  let trips = Math.round(
+    tripTotals[chosenTaz][day]['pickups'] + tripTotals[chosenTaz][day]['dropoffs'] );
   let title = buildPopupTitle(trips);
 
   let element = document.getElementById("popup-title");
@@ -375,14 +424,15 @@ let popup = null;
 
 function buildPopupTitle(trips) {
   let title = "<h3 id=\"popup-title\">" +
-              weekdays[day] + " in selected area:<br/>" + trips + " daily "+chosenDir+"</h3>"
+              weekdays[day] + " in selected area:<br/>" + trips + " daily pickups & dropoffs</h3>"
+              //+chosenDir+"</h3>"
   return title;
 }
 
 function clickedOnTaz(e) {
   chosenTaz = e.features[0].properties.taz;
   let taz = chosenTaz;
-  let trips = Math.round(tripTotals[taz][day][chosenDir]);
+  let trips = Math.round(tripTotals[taz][day]['pickups'] + tripTotals[taz][day]['dropoffs'] );
   if (trips) {
     currentTotal = trips;
   } else {
@@ -848,5 +898,5 @@ let helpPanel = new Vue({
   },
 });
 
-fetchZipFile();
-//fetchTripTotals();
+//fetchZipFile();
+fetchTripTotals();
