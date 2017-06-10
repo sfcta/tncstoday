@@ -21,7 +21,7 @@ let currentChart = null;
 let currentTotal = 0;
 let cachedTazData = null;
 
-let mapIs2D = false;
+let mapIs2D = true;
 
 mapboxgl.accessToken = "pk.eyJ1IjoicHNyYyIsImEiOiJjaXFmc2UxanMwM3F6ZnJtMWp3MjBvZHNrIn0._Dmske9er0ounTbBmdRrRQ";
 
@@ -31,7 +31,7 @@ let mymap = new mapboxgl.Map({
     center: [-122.44, 37.77],
     zoom: 12,
     bearing: 0,
-    pitch: 20,
+    pitch: 0,
     attributionControl: true,
     logoPosition: 'bottom-right',
 });
@@ -90,7 +90,7 @@ export default class PitchToggle {
         let _this = this;
 
         this._btn = document.createElement('button');
-        this._btn.className = 'mapboxgl-ctrl-icon mapboxgl-ctrl-pitchtoggle-2d';
+        this._btn.className = 'mapboxgl-ctrl-icon mapboxgl-ctrl-pitchtoggle-3d';
         this._btn.type = 'button';
         this._btn['aria-label'] = 'Toggle Pitch';
         this._btn.onclick = function() {
@@ -238,17 +238,14 @@ function addTazLayer(tazs, options={}) {
         source: 'taz-source',
         type: 'fill-extrusion',
         paint: {
-            'fill-extrusion-opacity':0.85,
+            'fill-extrusion-opacity':1.0,
             'fill-extrusion-color': {
                 property: 'trips',
                 stops: taColorRamp,
             },
-            'fill-extrusion-height': {
-                property: 'trips',
-                type:'identity',
-            },
+            'fill-extrusion-height': 0,
         }
-    }
+    }, 'road-secondary-tertiary'
   );
 
   //highlighted TAZ:
@@ -258,7 +255,7 @@ function addTazLayer(tazs, options={}) {
        source: 'taz-source',
        paint: (mapIs2D ? paintZone2D: paintZone3D),
        filter: ["==", "taz", ""]
-     }
+     }, 'road-secondary-tertiary'
    );
 
   // make taz hover cursor a pointer so user knows they can click.
@@ -373,7 +370,8 @@ function createChart(data) {
     ykeys: ['pickups', 'dropoffs'],
     ymax: z,
     labels: ['Pickups', 'Dropoffs'],
-    barColors: ["#3377cc","#991111",],
+//    barColors: ["#3377cc","#cc3300",],
+    barColors: ["#3377cc","#cc0033",],
     xLabels: "Hour",
     xLabelAngle: 60,
     xLabelFormat: dateFmt,
