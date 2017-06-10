@@ -275,6 +275,9 @@ function addTazLayer(tazs, options={}) {
   mymap.addControl(new PitchToggle({bearing: 0, pitch:20, minpitchzoom:14}), 'top-left');
   mymap.addControl(new mapboxgl.NavigationControl(), 'top-left');
 
+  mymap.dragRotate.disable();
+  mymap.touchZoomRotate.disableRotation();
+
   addLegend();
 
   // Muck with the mapbox layer colors and road widths
