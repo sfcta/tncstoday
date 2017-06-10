@@ -306,9 +306,6 @@ function addTazLayer(tazs, options={}) {
   mymap.setPaintProperty('bridge-motorway', 'line-width', 1.0);
   mymap.setPaintProperty('bridge-motorway-2', 'line-width', 1.0);
   mymap.setPaintProperty('bridge-motorway_link', 'line-width', 1.0);
-
-  let roads = mymap.getLayer('place-neighbourhood');
-  console.log(roads);
 }
 
 let isCurrentLegendDaily = true;
