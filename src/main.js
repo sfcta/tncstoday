@@ -579,6 +579,11 @@ function showDailyChart() {
       eventStrokeWidth: 2,
       eventLineColors: ['#ccc'],
     });
+
+    // click on chart area? move slider.
+    dailyChart.on('click', function(i, row) {
+      app.sliderValue = i+1; // +1 because 0 is all-day
+    })
   }
 
   app.nowMoloading = false;
