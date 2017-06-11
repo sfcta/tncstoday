@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+
+# SIMPLE server for localhost development
+# usage:  cd site; python ../serve-it.py
+
 import http.server
 
 class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
