@@ -883,6 +883,13 @@ let app = new Vue({
   },
   components: {
     vueSlider,
+  },
+  mounted: function () {
+    document.addEventListener("keydown", (e) => {
+      if (popup  && e.keyCode == 27) {
+        popup.remove();
+      }
+    });
   }
 });
 
@@ -894,7 +901,14 @@ let helpPanel = new Vue({
   methods: {
     clickToggleHelp: clickToggleHelp,
   },
-});
+  mounted: function () {
+    document.addEventListener("keydown", (e) => {
+      if (this.showHelp && e.keyCode == 27) {
+        clickToggleHelp();
+      }
+    });
+  }}
+);
 
 //fetchZipFile();
 fetchTripTotals();
