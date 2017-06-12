@@ -8,7 +8,7 @@
     <meta name="theme-color" content="#ffffff"/>
 
     <!-- VUE -->
-<!--    <script src="https://unpkg.com/vue"></script>-->
+    <!--    <script src="https://unpkg.com/vue"></script>-->
     <script src="https://unpkg.com/vue@2.3.4/dist/vue.min.js"></script>
 
     <!-- MAPBOX GL -->
@@ -138,14 +138,14 @@
             <li>Only rides that are <b><i>entirely within the city limits</i></b> are counted.
             <li>Data is averaged from several weeks in <b><i>fall 2016</i></b>.</li>
             <li>Darker colors &amp; taller bars mean more trips to/from an area.</li>
-            <li>Each area on the map is a TAZ ("transportation analysis zone").</li>
-            <li>Pickups and dropoffs are summed and averaged for each TAZ.</li>
+            <li>The map is divided into "Transportation Analysis Zones" (TAZs), which are individual blocks
+            in the downtown core and groups of blocks farther out.</li>
             </ul>
             <h2 style="margin-top:10px; margin-bottom:0px;">
             How to use this map</h2>
             <hr style="margin-bottom:5px"/>
-            Click on any block to see the daily pickups and dropoffs for an area.
-            You can choose different days of the week and times of day from the right panel.
+            Click any block to see the pickups and dropoffs for that area.
+            You can pick different days of the week and times of day on the right panel.
             <table><tr>
               <td class="help"><img height=96 src="/images/mouse-left.png"></td>
               <td class="help"><img height=96 src="/images/mouse-wheel.png"></td>
@@ -155,7 +155,6 @@
               <td width="33%"class="help">Mouse wheel changes zoom</td>
               <td width="33%"class="help">Switch to 3D mode! Right-click and drag to change 3D view.</td>
             </tr></table>
-            <br/>
 
             <div style="margin-top:20px;">
               <button @click="clickToggleHelp" class="small ui right floated violet button">OK, GOT IT</button>
