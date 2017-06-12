@@ -10,6 +10,8 @@ import JSZip from 'jszip';
 
 let api_server = 'http://api/api/';
 
+const TRIP_SCALING_FACTOR = 10.0;
+
 // some important global variables.
 let tripTotals = null;
 let day = 0;
@@ -161,6 +163,7 @@ function getColor(numTrips) {
 }
 
 let neighborhood = [];
+let taz_acres = [];
 
 // Create one giant GeoJSON layer. This should really be done in PostGIS, but I'm rushing.
 // See http://www.postgresonline.com/journal/archives/267-Creating-GeoJSON-Feature-Collections-with-JSON-and-PostGIS-functions.html
@@ -178,6 +181,7 @@ function buildTazDataFromJson(tazs, options) {
         if (skipTazs.has(taz.taz)) continue;
 
         neighborhood[taz.taz] = taz.nhood;
+        taz_acres[taz.taz] = 640.0 * taz.sq_mile;
 
         let json = {};
         json['type'] = 'Feature';
@@ -187,6 +191,7 @@ function buildTazDataFromJson(tazs, options) {
         if (taz.taz in tripTotals) {
             let trips = tripTotals[parseInt(taz.taz)][d];
             numTrips = trips[direction];
+            numTrips = TRIP_SCALING_FACTOR * numTrips / taz_acres[taz.taz];
             shade = getColor(numTrips);
             if (!shade) shade = '#222';
         }
@@ -518,7 +523,7 @@ function queryServer() {
   const segmentUrl = api_server + 'taz_boundaries?';
 
   // convert option list into a url parameter string
-  var taz_fields = {select: 'taz,geometry,nhood' };
+  var taz_fields = {select: 'taz,geometry,nhood,sq_mile' };
   var params = [];
   for (let key in taz_fields) params.push(esc(key) + '=' + esc(taz_fields[key]));
   let finalUrl = segmentUrl + params.join('&');
@@ -678,13 +683,14 @@ function loadHourlyData(hour) {
     let taz = item.properties.taz;
 
     let trips = cachedHourlyData[day][hour][chosenDir][taz];
-    let shade = getColor(trips);
+    let scaledTrips = TRIP_SCALING_FACTOR * trips / taz_acres[taz];
+    let shade = getColor(scaledTrips);
     if (!shade) shade = '#444';
 
     item.properties = {
         taz: taz,
         shade: shade,
-        trips: trips,
+        trips: scaledTrips,
     }
   }
   return cachedTazData;
