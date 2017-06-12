@@ -8,7 +8,7 @@ import vueSlider from 'vue-slider-component';
 import Cookies from 'js-cookie';
 import JSZip from 'jszip';
 
-let api_server = 'http://api/api/';
+let api_server = 'https://api.sfcta.org/api/';
 
 const TRIP_SCALING_FACTOR = 12.0;  // this scales the trips/sq.mile factor to match our color ramp
 
