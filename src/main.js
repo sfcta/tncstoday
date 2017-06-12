@@ -10,7 +10,7 @@ import JSZip from 'jszip';
 
 let api_server = 'https://api.sfcta.org/api/';
 
-const TRIP_SCALING_FACTOR = 12.0;  // this scales the trips/sq.mile factor to match our color ramp
+const TRIP_SCALING_FACTOR = 13.0;  // this scales the trips/sq.mile factor to match our color ramp
 
 // some important global variables.
 let tripTotals = null;
@@ -926,5 +926,4 @@ let helpPanel = new Vue({
   }}
 );
 
-//fetchZipFile();
-fetchTripTotals();
+fetchZipFile();

@@ -28140,7 +28140,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 var api_server = 'https://api.sfcta.org/api/';
 
-var TRIP_SCALING_FACTOR = 12.0; // this scales the trips/sq.mile factor to match our color ramp
+var TRIP_SCALING_FACTOR = 13.0; // this scales the trips/sq.mile factor to match our color ramp
 
 // some important global variables.
 var tripTotals = null;
@@ -29146,8 +29146,7 @@ var helpPanel = new Vue({
     });
   } });
 
-//fetchZipFile();
-fetchTripTotals();
+fetchZipFile();
 
 /***/ }),
 /* 170 */
