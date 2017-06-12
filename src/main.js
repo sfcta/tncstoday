@@ -10,7 +10,7 @@ import JSZip from 'jszip';
 
 let api_server = 'http://api/api/';
 
-const TRIP_SCALING_FACTOR = 10.0;
+const TRIP_SCALING_FACTOR = 12.0;  // this scales the trips/sq.mile factor to match our color ramp
 
 // some important global variables.
 let tripTotals = null;
@@ -462,6 +462,11 @@ function clickedOnTaz(e) {
               "<div id=\"chart\" style=\"width: 300px; height:250px;\"></div>" +
               "<p text-align=\"right\" class=\"hint\"><i>"+ neighborhood[chosenTaz] +
               ": TAZ code "+ chosenTaz + "</i></p>";
+
+      // one more time, make sure popup is gone
+      if (popup) {
+        popup.remove();
+      }
 
       popup = new mapboxgl.Popup({closeOnClick: true})
         .setLngLat(e.lngLat)
