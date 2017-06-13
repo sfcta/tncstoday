@@ -305,6 +305,7 @@ function addTazLayer(tazs, options={}) {
   mymap.setPaintProperty('road-label-small', 'text-color', '#fff');
   mymap.setPaintProperty('poi-scalerank1', 'text-halo-width', 0.0);
   mymap.setPaintProperty('poi-parks-scalerank1', 'text-halo-width', 0.0);
+  mymap.setPaintProperty('poi-parks-scalerank1', 'text-color', '#fff');
   mymap.setPaintProperty('poi-parks-scalerank3', 'text-halo-width', 0.0);
   mymap.setPaintProperty('bridge-primary', 'line-width', 1.0);
   mymap.setPaintProperty('bridge-secondary-tertiary', 'line-width', 1.0);
