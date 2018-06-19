@@ -28683,16 +28683,9 @@ var mymap = new mapboxgl.Map({
 var skipTazs = new Set([384, 385, 313, 305]);
 var weekdays = ['Mondays', 'Tuesdays', 'Wednesdays', 'Thursdays', 'Fridays', 'Saturdays', 'Sundays'];
 
-var colorRamp1 = [[10, '#FBFCBD'], [20, '#FCE3A7'], [30, '#FFCD8F'], [40, '#FFB57D'], [50, '#FF9C6B'], [75, '#FA815F'], [100, '#F5695F'], [125, '#E85462'], [150, '#D6456B'], [175, '#C23C76'], [200, '#AB337D'], [225, '#942B7F'], [250, '#802482'], [300, '#6A1C80'], [350, '#55157D'], [400, '#401073'], [500, '#291057'], [750, '#160D38'], [1000, '#0A081F'], [1800, '#000005']];
+var colorRampDaily = [[.5, '#FBFCBD'], [1, '#FCE3A7'], [1.5, '#FFCD8F'], [2, '#FFB57D'], [2.5, '#FF9C6B'], [3, '#FA815F'], [5, '#F5695F'], [7, '#E85462'], [10, '#D6456B'], [12, '#C23C76'], [14, '#AB337D'], [16, '#942B7F'], [18, '#802482'], [20, '#6A1C80'], [25, '#55157D'], [30, '#401073'], [35, '#291057'], [40, '#160D38'], [50, '#0A081F'], [90, '#000005']];
 
-var colorRamp2 = [];
-for (var zz = 2; zz < colorRamp1.length; zz++) {
-  colorRamp2[zz - 2] = [colorRamp1[zz][0], colorRamp1[colorRamp1.length - zz - 1][1]];
-}
-
-var colorRamp3 = [[0, '#208'], [60, '#44c'], [150, '#4a4'], [350, '#ee4'], [700, '#f46'], [1200, '#c00']];
-
-var taColorRamp = colorRamp1;
+var colorRampHourly = [[.5, '#FBFCBD'], [1, '#FCE3A7'], [1.5, '#FFCD8F'], [2, '#FFB57D'], [2.5, '#FF9C6B'], [3, '#FA815F'], [5, '#F5695F'], [7, '#E85462'], [10, '#D6456B'], [12, '#C23C76'], [14, '#AB337D'], [16, '#942B7F'], [18, '#802482'], [20, '#6A1C80'], [22, '#55157D'], [25, '#401073'], [30, '#291057'], [40, '#160D38'], [50, '#0A081F'], [90, '#000005']];
 
 // totals by day of week
 var totalPickups = [0, 0, 0, 0, 0, 0, 0];
@@ -28795,14 +28788,15 @@ exports.default = PitchToggle;
 
 function getColor(numTrips) {
   var i = void 0;
-  for (i = 0; i < taColorRamp.length; i++) {
-    if (numTrips < taColorRamp[i][0]) return taColorRamp[i][1];
+  for (i = 0; i < colorRampDaily.length; i++) {
+    if (numTrips < colorRampDaily[i][0]) return colorRampDaily[i][1];
   }
-  return taColorRamp[i - 1][1];
+  return colorRampDaily[i - 1][1];
 }
 
 var neighborhood = [];
 var taz_acres = [];
+var taz_sqmi = [];
 
 // Create one giant GeoJSON layer. This should really be done in PostGIS, but I'm rushing.
 // See http://www.postgresonline.com/journal/archives/267-Creating-GeoJSON-Feature-Collections-with-JSON-and-PostGIS-functions.html
@@ -28828,6 +28822,7 @@ function buildTazDataFromJson(tazs, options) {
 
           neighborhood[taz.taz] = taz.nhood;
           taz_acres[taz.taz] = 640.0 * taz.sq_mile;
+          taz_sqmi[taz.taz] = taz.sq_mile;
 
           var json = {};
           json['type'] = 'Feature';
@@ -28837,14 +28832,15 @@ function buildTazDataFromJson(tazs, options) {
           if (taz.taz in tripTotals) {
             var trips = tripTotals[parseInt(taz.taz)][d];
             numTrips = trips[direction];
-            numTrips = TRIP_SCALING_FACTOR * numTrips / taz_acres[taz.taz];
+            numTrips = numTrips / (taz_sqmi[taz.taz] * 1000);
             //shade = getColor(numTrips);
             //if (!shade) shade = '#222';
           }
           json['properties'] = {
             taz: taz.taz,
             //shade: shade,
-            trips: numTrips
+            trips: numTrips,
+            htrips: numTrips * 30
           };
           fulljson['features'].push(json);
         }
@@ -28875,7 +28871,7 @@ var paintZone3D = {
   'fill-extrusion-opacity': 1.0,
   'fill-extrusion-color': '#6ff',
   'fill-extrusion-height': {
-    property: 'trips',
+    property: 'htrips',
     type: 'identity'
   }
 };
@@ -28908,7 +28904,7 @@ function addTazLayer(tazs) {
       'fill-extrusion-opacity': 1.0,
       'fill-extrusion-color': {
         property: 'trips',
-        stops: taColorRamp
+        stops: colorRampDaily
       },
       'fill-extrusion-height': 0
     }
@@ -29007,7 +29003,7 @@ function buildChartDataFromJson(json) {
   var data = [];
 
   for (var h = 0; h < 24; h++) {
-    var record = json[(h + 3) % 24]; // %3 to start at 3AM
+    var record = json[h]; // %3 to start at 3AM
     var hour = Number(record.time.substring(0, 2));
     var picks = Number(record.pickups);
     var drops = Number(record.dropoffs);
@@ -29374,6 +29370,11 @@ function sliderChanged(index) {
 function switchToHourlyView(index) {
   var hourData = loadHourlyData(index);
   mymap.getSource('taz-source').setData(hourData);
+  if (index == 0) {
+    mymap.setPaintProperty('taz', 'fill-extrusion-color', { property: 'trips', stops: colorRampDaily });
+  } else {
+    mymap.setPaintProperty('taz', 'fill-extrusion-color', { property: 'trips', stops: colorRampHourly });
+  }
 }
 
 // update map with values for specific hour
@@ -29390,14 +29391,20 @@ function loadHourlyData(hour) {
       var taz = item.properties.taz;
 
       var trips = cachedHourlyData[day][hour][chosenDir][taz];
-      var scaledTrips = TRIP_SCALING_FACTOR * trips / taz_acres[taz];
+      var scaledTrips = void 0;
+      if (hour == 0) {
+        scaledTrips = trips / (taz_sqmi[taz] * 1000); //daily
+      } else {
+        scaledTrips = trips / (taz_sqmi[taz] * 100); //hourly
+      }
       //let shade = getColor(scaledTrips);
       //if (!shade) shade = '#444';
 
       item.properties = {
         taz: taz,
         //shade: shade,
-        trips: scaledTrips
+        trips: scaledTrips,
+        htrips: scaledTrips * 30
       };
     }
   } catch (err) {
@@ -29472,8 +29479,8 @@ function clickToggleHelp() {
 // Update all colors based on trip totals
 function updateColors() {
   if (!mapIs2D) {
-    mymap.setPaintProperty('taz', 'fill-extrusion-height', { property: 'trips', type: 'identity' });
-    mymap.setPaintProperty('taz-selected', 'fill-extrusion-height', { property: 'trips', type: 'identity' });
+    mymap.setPaintProperty('taz', 'fill-extrusion-height', { property: 'htrips', type: 'identity' });
+    mymap.setPaintProperty('taz-selected', 'fill-extrusion-height', { property: 'htrips', type: 'identity' });
   }
 
   if (app.sliderValue == 0) {
@@ -29537,8 +29544,8 @@ function buildDailyDetails(json) {
       }
 
       // save values -- using 3hr index offset
-      cachedHourlyData[_day][time_index]['dropoffs'][taz] = 8 * dropoff; // 8*cheating to make colors pop
-      cachedHourlyData[_day][time_index]['pickups'][taz] = 8 * pickup;
+      cachedHourlyData[_day][time_index]['dropoffs'][taz] = dropoff;
+      cachedHourlyData[_day][time_index]['pickups'][taz] = pickup;
 
       // save summary daily values
       dailyTotals[_day][time]['dropoffs'] += dropoff;
