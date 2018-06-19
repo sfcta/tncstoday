@@ -1,8 +1,10 @@
+﻿--DROP TABLE tnc.tnc_trip_stats CASCADE;
+
 -- Create table of tnc trips by hour from Drew's CSV file
 CREATE TABLE tnc.tnc_trip_stats
 (taz integer, day_of_week integer, time char(8), pickups double precision, dropoffs double precision);
 
-COPY tnc.tnc_trip_stats FROM 'tnc_trip_stats.csv' DELIMITER ',' CSV HEADER;
+COPY tnc.tnc_trip_stats FROM '/home/administrator/tnc_trip_stats.csv' DELIMITER ',' CSV HEADER;
 
 ALTER TABLE tnc.tnc_trip_stats ADD COLUMN id SERIAL PRIMARY KEY;
 
