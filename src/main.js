@@ -186,18 +186,18 @@ function buildTazDataFromJson(tazs, options) {
         let json = {};
         json['type'] = 'Feature';
         json['geometry'] = JSON.parse(taz.geometry);
-        let shade = '#222';
+        //let shade = '#222';
         let numTrips = 0;
         if (taz.taz in tripTotals) {
             let trips = tripTotals[parseInt(taz.taz)][d];
             numTrips = trips[direction];
             numTrips = TRIP_SCALING_FACTOR * numTrips / taz_acres[taz.taz];
-            shade = getColor(numTrips);
-            if (!shade) shade = '#222';
+            //shade = getColor(numTrips);
+            //if (!shade) shade = '#222';
         }
         json['properties'] = {
             taz: taz.taz,
-            shade: shade,
+            //shade: shade,
             trips: numTrips,
         }
         fulljson['features'].push(json);
@@ -690,12 +690,12 @@ function loadHourlyData(hour) {
 
     let trips = cachedHourlyData[day][hour][chosenDir][taz];
     let scaledTrips = TRIP_SCALING_FACTOR * trips / taz_acres[taz];
-    let shade = getColor(scaledTrips);
-    if (!shade) shade = '#444';
+    //let shade = getColor(scaledTrips);
+    //if (!shade) shade = '#444';
 
     item.properties = {
         taz: taz,
-        shade: shade,
+        //shade: shade,
         trips: scaledTrips,
     }
   }
