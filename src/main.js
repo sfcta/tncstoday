@@ -25,7 +25,7 @@ let cachedTazData = null;
 
 let mapIs2D = true;
 
-mapboxgl.accessToken = "pk.eyJ1Ijoic2ZjdGEiLCJhIjoiY2ozdXBhNm1mMDFkaTJ3dGRmZHFqanRuOCJ9.KDmACTJBGNA6l0CyPi1Luw";
+mapboxgl.accessToken = "pk.eyJ1Ijoic2ZjdGEiLCJhIjoiY2pvN2lrY24wMDNjcjNxcGkzcWlvNzdkeiJ9._gcYdVMWbz_Tq1hOfNe1TQ";
 
 let mymap = new mapboxgl.Map({
     container: 'sfmap',
