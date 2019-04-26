@@ -84,8 +84,24 @@ hr {margin-bottom:0px;}
   color:#fff;
 }
 
-#table-logo {margin-top:5px;}
-
+table#table-logo {
+  margin-bottom: 0px;
+  background-color: transparent;
+  border: 0px;
+}
+.td-logo {
+  padding-right: 0px;
+}
+.img-logo {
+  display:block;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  margin-right: auto;
+  width: 60%
+}
+table#table-logo tbody tr:nth-child(odd) td, tbody th {
+    background-color: transparent;
+}
 
 p.hint {color:#777; text-align:right; margin-right:24px; margin-top:-20px;}
 
